@@ -1,0 +1,29 @@
+# AWS App Runner service configuration.
+#
+# Used when App Runner builds from source. When deploying a prebuilt image
+# from ECR - which is what our CI does - the equivalent settings live on the
+# service itself and this file documents them.
+
+version: 1.0
+runtime: docker
+
+build:
+  commands:
+    build:
+      - echo "Image is built in GitHub Actions and pushed to ECR"
+
+run:
+  command: ./entrypoint.sh
+  network:
+    port: 8501
+  env:
+    - name: LLM_PROVIDER
+      value: gemini
+    - name: LOG_LEVEL
+      value: INFO
+    - name: AWS_REGION
+      value: ap-south-1
+  secrets:
+    # Resolved from AWS Secrets Manager at runtime; never stored in the image.
+    - name: GEMINI_API_KEY
+      value-from: arn:aws:secretsmanager:ap-south-1:ACCOUNT_ID:secret:finsight/gemini-api-key

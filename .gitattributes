@@ -1,0 +1,8 @@
+# Shell scripts must keep LF endings or they fail inside a Linux container
+# with "exec format error" - an easy trap when developing on Windows.
+*.sh text eol=lf
+Dockerfile text eol=lf
+entrypoint.sh text eol=lf
+
+# Everything else: normalise in the repo, native in the working copy
+* text=auto

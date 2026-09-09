@@ -24,3 +24,8 @@ env/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Trained model weights - around 1 GB. Distribute via S3 or a release.
+models/
+*.safetensors
+*.bin

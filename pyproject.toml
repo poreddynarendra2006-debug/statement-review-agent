@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "finsight-ai"
+version = "0.1.0"
+description = "Evidence-driven financial statement review agent. The language model never performs arithmetic."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+# The project is a set of top-level packages rather than an installed
+# distribution, so the repository root must be importable. Without this,
+# `pytest` works only when invoked as `python -m pytest`, which silently puts
+# the working directory on sys.path - and CI, which calls `pytest` directly,
+# fails to import the packages.
+pythonpath = ["."]
+testpaths = ["tests"]

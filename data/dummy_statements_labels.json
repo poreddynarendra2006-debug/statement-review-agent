@@ -1,0 +1,1485 @@
+{
+  "description": "Ground truth for dummy_statements_defective.csv. Hand-independent: every entry records a defect this script planted, not one the review engine found.",
+  "generated_with": {
+    "companies": 60,
+    "years": 8,
+    "start_year": 2016,
+    "defect_rate": 0.06,
+    "seed": 20260909,
+    "out": "data"
+  },
+  "total_statements": 480,
+  "total_defects": 147,
+  "defects": [
+    {
+      "company": "Brightwater Holdings",
+      "year": 2020,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 3152.0,
+      "reported_value": 2720.0,
+      "variance": -432.0
+    },
+    {
+      "company": "Beacon Partners",
+      "year": 2017,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 7359.0,
+      "reported_value": 7499.0,
+      "variance": 140.0
+    },
+    {
+      "company": "Beacon Partners",
+      "year": 2019,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 898.0,
+      "reported_value": 525.0,
+      "variance": -373.0
+    },
+    {
+      "company": "Beacon Partners",
+      "year": 2020,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 7146.0,
+      "reported_value": 7018.0,
+      "variance": -128.0
+    },
+    {
+      "company": "Cobalt Enterprises",
+      "year": 2016,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 30200.0,
+      "reported_value": 29561.0,
+      "variance": -639.0
+    },
+    {
+      "company": "Cobalt Enterprises",
+      "year": 2019,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 51317.0,
+      "reported_value": 54546.0,
+      "variance": 3229.0
+    },
+    {
+      "company": "Pinnacle Technologies",
+      "year": 2019,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 3675.0,
+      "reported_value": 6071.0,
+      "variance": 2396.0
+    },
+    {
+      "company": "Pinnacle Technologies",
+      "year": 2022,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 11085.0,
+      "reported_value": 6296.0,
+      "variance": -4789.0
+    },
+    {
+      "company": "Cascade Enterprises",
+      "year": 2019,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 4824.0,
+      "reported_value": 3675.0,
+      "variance": -1149.0
+    },
+    {
+      "company": "Orion Corporation",
+      "year": 2016,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 31300.0,
+      "reported_value": 33313.0,
+      "variance": 2013.0
+    },
+    {
+      "company": "Orion Corporation",
+      "year": 2016,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 19413.0,
+      "reported_value": 19208.0,
+      "variance": -205.0
+    },
+    {
+      "company": "Orion Corporation",
+      "year": 2018,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 21475.0,
+      "reported_value": 23846.0,
+      "variance": 2371.0
+    },
+    {
+      "company": "Ardent Holdings",
+      "year": 2017,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 363.0,
+      "reported_value": 458.0,
+      "variance": 95.0
+    },
+    {
+      "company": "Ardent Holdings",
+      "year": 2021,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 52845.0,
+      "reported_value": 52644.0,
+      "variance": -201.0
+    },
+    {
+      "company": "Ardent Holdings",
+      "year": 2023,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 1618.0,
+      "reported_value": 1704.0,
+      "variance": 86.0
+    },
+    {
+      "company": "Ironwood Industries",
+      "year": 2016,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 38900.0,
+      "reported_value": 37349.0,
+      "variance": -1551.0
+    },
+    {
+      "company": "Ironwood Industries",
+      "year": 2021,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 36780.0,
+      "reported_value": 34226.0,
+      "variance": -2554.0
+    },
+    {
+      "company": "Ironwood Industries",
+      "year": 2021,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 49061.0,
+      "reported_value": 52117.0,
+      "variance": 3056.0
+    },
+    {
+      "company": "Ironwood Industries",
+      "year": 2022,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 17332.0,
+      "reported_value": 16603.0,
+      "variance": -729.0
+    },
+    {
+      "company": "Thornhill Holdings",
+      "year": 2021,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 55622.0,
+      "reported_value": 55338.0,
+      "variance": -284.0
+    },
+    {
+      "company": "Vantage Corporation",
+      "year": 2019,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 30474.0,
+      "reported_value": 28574.0,
+      "variance": -1900.0
+    },
+    {
+      "company": "Ardent Corporation",
+      "year": 2017,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 61430.0,
+      "reported_value": 61730.0,
+      "variance": 300.0
+    },
+    {
+      "company": "Ardent Corporation",
+      "year": 2018,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 1499.0,
+      "reported_value": 1041.0,
+      "variance": -458.0
+    },
+    {
+      "company": "Ardent Corporation",
+      "year": 2018,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 569.0,
+      "reported_value": 1358.0,
+      "variance": 789.0
+    },
+    {
+      "company": "Ardent Corporation",
+      "year": 2020,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 63819.0,
+      "reported_value": 63935.0,
+      "variance": 116.0
+    },
+    {
+      "company": "Ardent Corporation",
+      "year": 2021,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": -537.0,
+      "reported_value": -1366.0,
+      "variance": -829.0
+    },
+    {
+      "company": "Ardent Corporation",
+      "year": 2023,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 2543.0,
+      "reported_value": 2317.0,
+      "variance": -226.0
+    },
+    {
+      "company": "Halcyon Corporation",
+      "year": 2020,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 10168.0,
+      "reported_value": 10463.0,
+      "variance": 295.0
+    },
+    {
+      "company": "Halcyon Corporation",
+      "year": 2022,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 17232.0,
+      "reported_value": 15842.0,
+      "variance": -1390.0
+    },
+    {
+      "company": "Halcyon Corporation",
+      "year": 2023,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 74485.0,
+      "reported_value": 72088.0,
+      "variance": -2397.0
+    },
+    {
+      "company": "Vertex Enterprises",
+      "year": 2017,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 6460.0,
+      "reported_value": 9347.0,
+      "variance": 2887.0
+    },
+    {
+      "company": "Vertex Enterprises",
+      "year": 2020,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 14394.0,
+      "reported_value": 17858.0,
+      "variance": 3464.0
+    },
+    {
+      "company": "Vertex Enterprises",
+      "year": 2023,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 21808.0,
+      "reported_value": 22233.0,
+      "variance": 425.0
+    },
+    {
+      "company": "Sable Enterprises",
+      "year": 2021,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 2989.0,
+      "reported_value": 2869.0,
+      "variance": -120.0
+    },
+    {
+      "company": "Vertex Industries",
+      "year": 2020,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 16663.0,
+      "reported_value": 19283.0,
+      "variance": 2620.0
+    },
+    {
+      "company": "Lumen Technologies",
+      "year": 2020,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 5875.0,
+      "reported_value": 7377.0,
+      "variance": 1502.0
+    },
+    {
+      "company": "Lumen Technologies",
+      "year": 2022,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 8738.0,
+      "reported_value": 6726.0,
+      "variance": -2012.0
+    },
+    {
+      "company": "Northwind Labs",
+      "year": 2016,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 18495.0,
+      "reported_value": 17126.0,
+      "variance": -1369.0
+    },
+    {
+      "company": "Northwind Labs",
+      "year": 2017,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 10239.0,
+      "reported_value": 7557.0,
+      "variance": -2682.0
+    },
+    {
+      "company": "Northwind Labs",
+      "year": 2018,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 11853.0,
+      "reported_value": 11669.0,
+      "variance": -184.0
+    },
+    {
+      "company": "Northwind Labs",
+      "year": 2019,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 9502.0,
+      "reported_value": 9920.0,
+      "variance": 418.0
+    },
+    {
+      "company": "Northwind Labs",
+      "year": 2023,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 36755.0,
+      "reported_value": 36481.0,
+      "variance": -274.0
+    },
+    {
+      "company": "Northwind Labs",
+      "year": 2023,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 26526.0,
+      "reported_value": 25866.0,
+      "variance": -660.0
+    },
+    {
+      "company": "Fairmont Corporation",
+      "year": 2017,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 4036.0,
+      "reported_value": 5781.0,
+      "variance": 1745.0
+    },
+    {
+      "company": "Fairmont Corporation",
+      "year": 2018,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 9168.0,
+      "reported_value": 12712.0,
+      "variance": 3544.0
+    },
+    {
+      "company": "Fairmont Corporation",
+      "year": 2020,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 43333.0,
+      "reported_value": 40024.0,
+      "variance": -3309.0
+    },
+    {
+      "company": "Cobalt Corporation",
+      "year": 2017,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 27525.0,
+      "reported_value": 24165.0,
+      "variance": -3360.0
+    },
+    {
+      "company": "Cobalt Corporation",
+      "year": 2017,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 10527.0,
+      "reported_value": 7739.0,
+      "variance": -2788.0
+    },
+    {
+      "company": "Cobalt Corporation",
+      "year": 2018,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 13860.0,
+      "reported_value": 11655.0,
+      "variance": -2205.0
+    },
+    {
+      "company": "Cobalt Corporation",
+      "year": 2021,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 11229.0,
+      "reported_value": 15573.0,
+      "variance": 4344.0
+    },
+    {
+      "company": "Ironwood Holdings",
+      "year": 2020,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 74527.0,
+      "reported_value": 78264.0,
+      "variance": 3737.0
+    },
+    {
+      "company": "Ironwood Holdings",
+      "year": 2021,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 8929.0,
+      "reported_value": 6098.0,
+      "variance": -2831.0
+    },
+    {
+      "company": "Lumen Group",
+      "year": 2016,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 16782.0,
+      "reported_value": 18172.0,
+      "variance": 1390.0
+    },
+    {
+      "company": "Lumen Group",
+      "year": 2016,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 2890.0,
+      "reported_value": 5538.0,
+      "variance": 2648.0
+    },
+    {
+      "company": "Lumen Group",
+      "year": 2018,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 1136.0,
+      "reported_value": -1204.0,
+      "variance": -2340.0
+    },
+    {
+      "company": "Lumen Group",
+      "year": 2019,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": -13168.0,
+      "reported_value": -11233.0,
+      "variance": 1935.0
+    },
+    {
+      "company": "Lumen Group",
+      "year": 2021,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 6867.0,
+      "reported_value": 3236.0,
+      "variance": -3631.0
+    },
+    {
+      "company": "Northwind Enterprises",
+      "year": 2020,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 13124.0,
+      "reported_value": 13477.0,
+      "variance": 353.0
+    },
+    {
+      "company": "Northwind Enterprises",
+      "year": 2022,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 4672.0,
+      "reported_value": 5912.0,
+      "variance": 1240.0
+    },
+    {
+      "company": "Vantage Group",
+      "year": 2018,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 8752.0,
+      "reported_value": 10197.0,
+      "variance": 1445.0
+    },
+    {
+      "company": "Vertex Holdings",
+      "year": 2017,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 6450.0,
+      "reported_value": 4121.0,
+      "variance": -2329.0
+    },
+    {
+      "company": "Vertex Holdings",
+      "year": 2019,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 91588.0,
+      "reported_value": 89631.0,
+      "variance": -1957.0
+    },
+    {
+      "company": "Vertex Holdings",
+      "year": 2021,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 13166.0,
+      "reported_value": 16591.0,
+      "variance": 3425.0
+    },
+    {
+      "company": "Orion Systems",
+      "year": 2016,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 17431.0,
+      "reported_value": 19342.0,
+      "variance": 1911.0
+    },
+    {
+      "company": "Northwind Holdings",
+      "year": 2017,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 11942.0,
+      "reported_value": 11528.0,
+      "variance": -414.0
+    },
+    {
+      "company": "Quarry Systems",
+      "year": 2020,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 28119.0,
+      "reported_value": 28250.0,
+      "variance": 131.0
+    },
+    {
+      "company": "Quarry Systems",
+      "year": 2023,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 31339.0,
+      "reported_value": 30732.0,
+      "variance": -607.0
+    },
+    {
+      "company": "Vantage Technologies",
+      "year": 2016,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 15798.0,
+      "reported_value": 17599.0,
+      "variance": 1801.0
+    },
+    {
+      "company": "Vantage Technologies",
+      "year": 2018,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 6604.0,
+      "reported_value": 5877.0,
+      "variance": -727.0
+    },
+    {
+      "company": "Vantage Technologies",
+      "year": 2018,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": -2792.0,
+      "reported_value": -4218.0,
+      "variance": -1426.0
+    },
+    {
+      "company": "Orion Works",
+      "year": 2017,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 12262.0,
+      "reported_value": 9585.0,
+      "variance": -2677.0
+    },
+    {
+      "company": "Halcyon Group",
+      "year": 2016,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 24027.0,
+      "reported_value": 24286.0,
+      "variance": 259.0
+    },
+    {
+      "company": "Halcyon Group",
+      "year": 2017,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 72382.0,
+      "reported_value": 71840.0,
+      "variance": -542.0
+    },
+    {
+      "company": "Halcyon Group",
+      "year": 2017,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 26506.0,
+      "reported_value": 29154.0,
+      "variance": 2648.0
+    },
+    {
+      "company": "Halcyon Group",
+      "year": 2017,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 9140.0,
+      "reported_value": 10899.0,
+      "variance": 1759.0
+    },
+    {
+      "company": "Halcyon Group",
+      "year": 2019,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 7741.0,
+      "reported_value": 6232.0,
+      "variance": -1509.0
+    },
+    {
+      "company": "Halcyon Group",
+      "year": 2020,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 26372.0,
+      "reported_value": 24994.0,
+      "variance": -1378.0
+    },
+    {
+      "company": "Halcyon Group",
+      "year": 2023,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 115559.0,
+      "reported_value": 114409.0,
+      "variance": -1150.0
+    },
+    {
+      "company": "Halcyon Group",
+      "year": 2023,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 43991.0,
+      "reported_value": 49329.0,
+      "variance": 5338.0
+    },
+    {
+      "company": "Vantage Labs",
+      "year": 2017,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 13928.0,
+      "reported_value": 12828.0,
+      "variance": -1100.0
+    },
+    {
+      "company": "Pinnacle Systems",
+      "year": 2020,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 5211.0,
+      "reported_value": 4486.0,
+      "variance": -725.0
+    },
+    {
+      "company": "Thornhill Systems",
+      "year": 2020,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 2307.0,
+      "reported_value": 3916.0,
+      "variance": 1609.0
+    },
+    {
+      "company": "Halcyon Enterprises",
+      "year": 2017,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 20095.0,
+      "reported_value": 20927.0,
+      "variance": 832.0
+    },
+    {
+      "company": "Halcyon Enterprises",
+      "year": 2018,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 10083.0,
+      "reported_value": 12264.0,
+      "variance": 2181.0
+    },
+    {
+      "company": "Halcyon Enterprises",
+      "year": 2020,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 20923.0,
+      "reported_value": 22977.0,
+      "variance": 2054.0
+    },
+    {
+      "company": "Beacon Labs",
+      "year": 2016,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 2832.0,
+      "reported_value": 3246.0,
+      "variance": 414.0
+    },
+    {
+      "company": "Beacon Labs",
+      "year": 2023,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 5862.0,
+      "reported_value": 2379.0,
+      "variance": -3483.0
+    },
+    {
+      "company": "Cobalt Industries",
+      "year": 2018,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 17677.0,
+      "reported_value": 13317.0,
+      "variance": -4360.0
+    },
+    {
+      "company": "Cobalt Industries",
+      "year": 2020,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 11323.0,
+      "reported_value": 13293.0,
+      "variance": 1970.0
+    },
+    {
+      "company": "Cobalt Industries",
+      "year": 2022,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 36762.0,
+      "reported_value": 39099.0,
+      "variance": 2337.0
+    },
+    {
+      "company": "Summit Holdings",
+      "year": 2017,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 284.0,
+      "reported_value": 412.0,
+      "variance": 128.0
+    },
+    {
+      "company": "Summit Holdings",
+      "year": 2020,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 1113.0,
+      "reported_value": 1021.0,
+      "variance": -92.0
+    },
+    {
+      "company": "Summit Holdings",
+      "year": 2021,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 50707.0,
+      "reported_value": 50515.0,
+      "variance": -192.0
+    },
+    {
+      "company": "Northwind Partners",
+      "year": 2023,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 29200.0,
+      "reported_value": 32384.0,
+      "variance": 3184.0
+    },
+    {
+      "company": "Ironwood Works",
+      "year": 2016,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 4892.0,
+      "reported_value": 4349.0,
+      "variance": -543.0
+    },
+    {
+      "company": "Ironwood Works",
+      "year": 2016,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 1202.0,
+      "reported_value": 1014.0,
+      "variance": -188.0
+    },
+    {
+      "company": "Ironwood Works",
+      "year": 2017,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 3808.0,
+      "reported_value": 4327.0,
+      "variance": 519.0
+    },
+    {
+      "company": "Ironwood Works",
+      "year": 2019,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 2388.0,
+      "reported_value": 3048.0,
+      "variance": 660.0
+    },
+    {
+      "company": "Ironwood Works",
+      "year": 2021,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 93378.0,
+      "reported_value": 93535.0,
+      "variance": 157.0
+    },
+    {
+      "company": "Ironwood Works",
+      "year": 2023,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 104691.0,
+      "reported_value": 104010.0,
+      "variance": -681.0
+    },
+    {
+      "company": "Sable Systems",
+      "year": 2016,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 61900.0,
+      "reported_value": 64515.0,
+      "variance": 2615.0
+    },
+    {
+      "company": "Sable Systems",
+      "year": 2016,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 11978.0,
+      "reported_value": 9949.0,
+      "variance": -2029.0
+    },
+    {
+      "company": "Sable Systems",
+      "year": 2019,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 40795.0,
+      "reported_value": 37811.0,
+      "variance": -2984.0
+    },
+    {
+      "company": "Sable Systems",
+      "year": 2021,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 52735.0,
+      "reported_value": 57377.0,
+      "variance": 4642.0
+    },
+    {
+      "company": "Quarry Group",
+      "year": 2018,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 20744.0,
+      "reported_value": 22553.0,
+      "variance": 1809.0
+    },
+    {
+      "company": "Orion Holdings",
+      "year": 2019,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 69182.0,
+      "reported_value": 69362.0,
+      "variance": 180.0
+    },
+    {
+      "company": "Orion Holdings",
+      "year": 2021,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 4869.0,
+      "reported_value": 3478.0,
+      "variance": -1391.0
+    },
+    {
+      "company": "Orion Holdings",
+      "year": 2022,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 7381.0,
+      "reported_value": 9284.0,
+      "variance": 1903.0
+    },
+    {
+      "company": "Orion Holdings",
+      "year": 2023,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 87431.0,
+      "reported_value": 88849.0,
+      "variance": 1418.0
+    },
+    {
+      "company": "Ardent Group",
+      "year": 2016,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 11300.0,
+      "reported_value": 9170.0,
+      "variance": -2130.0
+    },
+    {
+      "company": "Ardent Group",
+      "year": 2022,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 8024.0,
+      "reported_value": 12010.0,
+      "variance": 3986.0
+    },
+    {
+      "company": "Beacon Corporation",
+      "year": 2016,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 4880.0,
+      "reported_value": 7403.0,
+      "variance": 2523.0
+    },
+    {
+      "company": "Beacon Corporation",
+      "year": 2020,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 21746.0,
+      "reported_value": 18763.0,
+      "variance": -2983.0
+    },
+    {
+      "company": "Beacon Corporation",
+      "year": 2021,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 12907.0,
+      "reported_value": 11098.0,
+      "variance": -1809.0
+    },
+    {
+      "company": "Beacon Corporation",
+      "year": 2023,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 10781.0,
+      "reported_value": 13595.0,
+      "variance": 2814.0
+    },
+    {
+      "company": "Cascade Industries",
+      "year": 2019,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 82954.0,
+      "reported_value": 87624.0,
+      "variance": 4670.0
+    },
+    {
+      "company": "Cascade Industries",
+      "year": 2020,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 92052.0,
+      "reported_value": 92721.0,
+      "variance": 669.0
+    },
+    {
+      "company": "Vertex Works",
+      "year": 2016,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 24900.0,
+      "reported_value": 22393.0,
+      "variance": -2507.0
+    },
+    {
+      "company": "Vertex Works",
+      "year": 2016,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 15775.0,
+      "reported_value": 18919.0,
+      "variance": 3144.0
+    },
+    {
+      "company": "Vertex Works",
+      "year": 2018,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 31346.0,
+      "reported_value": 30117.0,
+      "variance": -1229.0
+    },
+    {
+      "company": "Vertex Works",
+      "year": 2020,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 39003.0,
+      "reported_value": 41095.0,
+      "variance": 2092.0
+    },
+    {
+      "company": "Vertex Works",
+      "year": 2020,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 3854.0,
+      "reported_value": 8383.0,
+      "variance": 4529.0
+    },
+    {
+      "company": "Vertex Works",
+      "year": 2021,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 10716.0,
+      "reported_value": 9285.0,
+      "variance": -1431.0
+    },
+    {
+      "company": "Vertex Works",
+      "year": 2023,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 36714.0,
+      "reported_value": 31678.0,
+      "variance": -5036.0
+    },
+    {
+      "company": "Ardent Works",
+      "year": 2018,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 16002.0,
+      "reported_value": 14602.0,
+      "variance": -1400.0
+    },
+    {
+      "company": "Ardent Works",
+      "year": 2020,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 25357.0,
+      "reported_value": 26156.0,
+      "variance": 799.0
+    },
+    {
+      "company": "Cobalt Labs",
+      "year": 2019,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 7328.0,
+      "reported_value": 11847.0,
+      "variance": 4519.0
+    },
+    {
+      "company": "Cobalt Labs",
+      "year": 2023,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 127804.0,
+      "reported_value": 129806.0,
+      "variance": 2002.0
+    },
+    {
+      "company": "Cascade Group",
+      "year": 2016,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 25193.0,
+      "reported_value": 25897.0,
+      "variance": 704.0
+    },
+    {
+      "company": "Cascade Group",
+      "year": 2019,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 29180.0,
+      "reported_value": 27141.0,
+      "variance": -2039.0
+    },
+    {
+      "company": "Orion Technologies",
+      "year": 2016,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 49500.0,
+      "reported_value": 48773.0,
+      "variance": -727.0
+    },
+    {
+      "company": "Orion Technologies",
+      "year": 2017,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 4818.0,
+      "reported_value": 3990.0,
+      "variance": -828.0
+    },
+    {
+      "company": "Orion Technologies",
+      "year": 2019,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 22289.0,
+      "reported_value": 21864.0,
+      "variance": -425.0
+    },
+    {
+      "company": "Orion Group",
+      "year": 2019,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 1186.0,
+      "reported_value": 3069.0,
+      "variance": 1883.0
+    },
+    {
+      "company": "Brightwater Works",
+      "year": 2016,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 6834.0,
+      "reported_value": 5243.0,
+      "variance": -1591.0
+    },
+    {
+      "company": "Brightwater Works",
+      "year": 2019,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 21042.0,
+      "reported_value": 23776.0,
+      "variance": 2734.0
+    },
+    {
+      "company": "Brightwater Works",
+      "year": 2021,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 36140.0,
+      "reported_value": 35849.0,
+      "variance": -291.0
+    },
+    {
+      "company": "Brightwater Works",
+      "year": 2023,
+      "rule_id": "VAL_CF_05",
+      "defect_type": "cash_flow",
+      "field_altered": "Ending Cash",
+      "correct_value": 19645.0,
+      "reported_value": 22773.0,
+      "variance": 3128.0
+    },
+    {
+      "company": "Thornhill Technologies",
+      "year": 2021,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 74699.0,
+      "reported_value": 73488.0,
+      "variance": -1211.0
+    },
+    {
+      "company": "Summit Systems",
+      "year": 2016,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 7268.0,
+      "reported_value": 7506.0,
+      "variance": 238.0
+    },
+    {
+      "company": "Summit Systems",
+      "year": 2023,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 34701.0,
+      "reported_value": 35400.0,
+      "variance": 699.0
+    },
+    {
+      "company": "Lumen Holdings",
+      "year": 2019,
+      "rule_id": "VAL_NI_04",
+      "defect_type": "net_income",
+      "field_altered": "Net Income",
+      "correct_value": 454.0,
+      "reported_value": 172.0,
+      "variance": -282.0
+    },
+    {
+      "company": "Lumen Holdings",
+      "year": 2022,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 42605.0,
+      "reported_value": 42902.0,
+      "variance": 297.0
+    },
+    {
+      "company": "Thornhill Labs",
+      "year": 2018,
+      "rule_id": "VAL_GP_02",
+      "defect_type": "gross_profit",
+      "field_altered": "Gross Profit",
+      "correct_value": 44658.0,
+      "reported_value": 49195.0,
+      "variance": 4537.0
+    },
+    {
+      "company": "Thornhill Labs",
+      "year": 2019,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 94551.0,
+      "reported_value": 93584.0,
+      "variance": -967.0
+    },
+    {
+      "company": "Thornhill Labs",
+      "year": 2022,
+      "rule_id": "VAL_BS_01",
+      "defect_type": "balance_sheet",
+      "field_altered": "Total Assets",
+      "correct_value": 138786.0,
+      "reported_value": 142383.0,
+      "variance": 3597.0
+    },
+    {
+      "company": "Beacon Industries",
+      "year": 2017,
+      "rule_id": "VAL_OP_03",
+      "defect_type": "operating_income",
+      "field_altered": "Operating Income",
+      "correct_value": 5330.0,
+      "reported_value": 5152.0,
+      "variance": -178.0
+    }
+  ]
+}
