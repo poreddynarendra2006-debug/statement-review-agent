@@ -8,8 +8,8 @@ Design documents and the material the panel will read.
 
 | File | What it does |
 |:--|:--|
-| `HLD.md` | High level design — architecture, contracts, decisions, deployment. |
-| `TEAM_WORK_SPLIT.md` | Who builds what, and by when. |
+| `HLD.md` | High level design — architecture, data contracts, design decisions, deployment. |
+| `DEPLOYMENT.md` | AWS setup, deploy commands, rollback, and the demo-day runbook. |
 
 ## Contract
 
