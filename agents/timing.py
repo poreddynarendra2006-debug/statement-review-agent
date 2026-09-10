@@ -74,11 +74,14 @@ class Timings:
 
         A stage timed more than once - which happens when the pipeline runs
         per company - is summed rather than overwritten.
+
+        Microsecond resolution, because a fast stage rounded to four places
+        reports 0.0, and a stage that ran is never a stage that took no time.
         """
         out: Dict[str, float] = {}
         for name, seconds in self._stages:
-            out[name] = round(out.get(name, 0.0) + seconds, 4)
-        out[TOTAL_KEY] = round(self.total, 4)
+            out[name] = round(out.get(name, 0.0) + seconds, 6)
+        out[TOTAL_KEY] = round(self.total, 6)
         return out
 
     def summary(self) -> str:

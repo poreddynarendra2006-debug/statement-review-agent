@@ -125,16 +125,21 @@ class FakeValidationResult:
 
 @dataclass
 class FakeYoYResult:
-    """Owner: Trend Agent. One line item, one year against the previous."""
+    """Owner: Trend Agent. Confirmed 10 Sep 2026.
 
-    metric: str = "revenue"
+    Note there is no is_significant flag - materiality lives on
+    DeviationRecord instead, so anything asking "does this movement
+    matter?" reads that, not this.
+    """
+
+    company: str = "Acme Corporation"
     year: int = 2023
-    previous_value: Optional[float] = 670
-    current_value: Optional[float] = 780
-    change: Optional[float] = 110
-    percent_change: Optional[float] = 16.4
-    is_significant: bool = False
-    commentary: str = "Revenue grew 16.4% year on year."
+    metric: str = "revenue"
+    current_value: float = 780.0
+    previous_value: Optional[float] = 670.0
+    yoy_percent: Optional[float] = 16.42
+    trend: str = "INCREASING"          # INCREASING | DECREASING | STABLE
+    data_status: str = "COMPLETE"      # COMPLETE | PARTIAL | MISSING
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -142,13 +147,82 @@ class FakeYoYResult:
 
 @dataclass
 class FakeRatioResult:
-    """Owner: Trend Agent. One ratio, one year."""
+    """Owner: Trend Agent. Confirmed 10 Sep 2026."""
 
-    name: str = "current_ratio"
+    company: str = "Acme Corporation"
     year: int = 2023
+    category: str = "LIQUIDITY"        # LIQUIDITY | LEVERAGE | PROFITABILITY | RETURNS
+    ratio_name: str = "current_ratio"
     value: Optional[float] = 2.32
-    benchmark_status: str = "HEALTHY"    # HEALTHY | WARNING | CRITICAL
-    interpretation: str = "Comfortable short-term liquidity."
+    status: str = "HEALTHY"            # HEALTHY | WARNING | CRITICAL
+    formula: Optional[str] = "Current Assets / Current Liabilities"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class FakeForecastResult:
+    """Owner: Trend Agent. The trained forecasting model's prediction."""
+
+    company: str = "Acme Corporation"
+    forecast_year: int = 2024
+    metric: str = "revenue"
+    last_actual_year: int = 2023
+    last_actual_value: float = 780.0
+    forecast_value: float = 892.5
+    forecast_method: str = "linear_regression"
+    slope: Optional[float] = 93.5
+    intercept: Optional[float] = -188_000.0
+    status: str = "OK"                 # OK | INSUFFICIENT_DATA | FAILED
+    notes: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class FakeEvaluationResult:
+    """Owner: Trend Agent. How well the forecasting model performs.
+
+    These are the regression metrics the project reports for the ML work.
+    """
+
+    company: str = "Acme Corporation"
+    metric: str = "revenue"
+    model: str = "linear_regression"
+    mae: Optional[float] = 24.8
+    rmse: Optional[float] = 31.2
+    r2: Optional[float] = 0.94
+    evaluation_status: str = "OK"      # OK | INSUFFICIENT_DATA
+    train_years_count: int = 6
+    test_years_count: int = 2
+    train_years_range: str = "2016-2021"
+    test_years_range: str = "2022-2023"
+    notes: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class FakeDeviationRecord:
+    """Owner: Trend Agent. Actual against forecast - where materiality lives."""
+
+    company: str = "Acme Corporation"
+    year: int = 2023
+    metric: str = "receivables"
+    actual: float = 35_200.0
+    forecast: float = 8_400.0
+    deviation: float = 26_800.0
+    deviation_percent: Optional[float] = 319.0
+    absolute_deviation: float = 26_800.0
+    absolute_deviation_percent: Optional[float] = 319.0
+    actual_to_forecast_ratio: Optional[float] = 4.19
+    direction: str = "ABOVE"           # ABOVE | BELOW | ON_TRACK
+    material_deviation: bool = True
+    materiality_threshold: float = 0.05
+    notes: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -156,14 +230,29 @@ class FakeRatioResult:
 
 @dataclass
 class FakeAnomalyFinding:
-    """Owner: Anomaly Agent. One unusual figure or contradiction."""
+    """Owner: Anomaly Agent. Confirmed from the delivered package, 10 Sep 2026.
 
-    anomaly_id: str = "ANM_001"
-    year: int = 2023
-    title: str = "Receivables growth far exceeds revenue growth"
-    severity: str = "MEDIUM"
-    evidence: str = "Receivables +340% against revenue +16.4% in FY2023."
-    detection_method: str = "rule"       # rule | model
+    Note this carries `explanation` and `recommendation` rather than the
+    `evidence` field the other components use. The orchestrator normalises
+    that when building the evidence packet.
+    """
+
+    company: Optional[str] = "Acme Corporation"
+    year: Optional[int] = 2023
+    anomaly_type: str = "historical_outlier"
+    score: float = -0.0273
+    severity: str = "HIGH"             # HIGH | MEDIUM | LOW
+    confidence: float = 0.98
+    record_id: Optional[str] = "REC_0142"
+    relevant_features: Dict[str, float] = field(default_factory=dict)
+    deviations: Dict[str, float] = field(default_factory=dict)
+    explanation: str = (
+        "The company-year observation exhibits a statistically unusual pattern."
+    )
+    recommendation: str = "Audit year-on-year line-item variances."
+    model_name: str = "IsolationForest"
+    model_mode: str = "GENERIC_LOCAL"
+    percentile: Optional[float] = 97.5
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -323,25 +412,61 @@ def validation_results() -> List[FakeValidationResult]:
 
 @pytest.fixture
 def yoy_results() -> List[FakeYoYResult]:
+    """One ordinary movement and one large one."""
     return [
         FakeYoYResult(),
         FakeYoYResult(
-            metric="receivables", previous_value=8000, current_value=35200,
-            change=27200, percent_change=340.0, is_significant=True,
-            commentary="Receivables rose 340% year on year.",
+            metric="receivables", previous_value=8_000.0, current_value=35_200.0,
+            yoy_percent=340.0, trend="INCREASING",
         ),
     ]
 
 
 @pytest.fixture
 def ratio_results() -> List[FakeRatioResult]:
+    """One healthy ratio and one flagged, so both paths are exercised."""
     return [
         FakeRatioResult(),
         FakeRatioResult(
-            name="debt_to_equity", value=1.85,
-            benchmark_status="WARNING",
-            interpretation="Leverage above the comfortable range.",
+            category="LEVERAGE", ratio_name="debt_to_equity", value=1.85,
+            status="WARNING",
+            formula="Total Liabilities / Shareholders' Equity",
         ),
+    ]
+
+
+@pytest.fixture
+def forecasts() -> List[FakeForecastResult]:
+    return [
+        FakeForecastResult(),
+        FakeForecastResult(metric="net_income", last_actual_value=128.0,
+                           forecast_value=147.0, slope=19.4),
+    ]
+
+
+@pytest.fixture
+def evaluations() -> List[FakeEvaluationResult]:
+    """One good fit and one the model could not evaluate."""
+    return [
+        FakeEvaluationResult(),
+        FakeEvaluationResult(metric="ebitda", mae=None, rmse=None, r2=None,
+                             evaluation_status="INSUFFICIENT_DATA",
+                             train_years_count=2, test_years_count=0,
+                             notes="fewer than 4 periods available"),
+    ]
+
+
+@pytest.fixture
+def deviations() -> List[FakeDeviationRecord]:
+    """One material deviation and one on track."""
+    return [
+        FakeDeviationRecord(),
+        FakeDeviationRecord(metric="revenue", actual=780.0, forecast=772.0,
+                            deviation=8.0, deviation_percent=1.04,
+                            absolute_deviation=8.0,
+                            absolute_deviation_percent=1.04,
+                            actual_to_forecast_ratio=1.01,
+                            direction="ON_TRACK", material_deviation=False),
     ]
 
 
