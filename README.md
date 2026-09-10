@@ -92,7 +92,7 @@ python -m venv .venv
 .venv\Scripts\activate        # Windows
 pip install -r requirements.txt
 pytest -v
-streamlit run app.py
+uvicorn api.main:app --reload     # then open http://localhost:8000
 ```
 
 **No AI API key is required.** Without one the application falls back to an offline reviewer and remains fully functional — which also means no data leaves the machine.
@@ -101,7 +101,7 @@ streamlit run app.py
 
 ## Built with
 
-Python · pandas · numpy · scikit-learn · Streamlit · Plotly · FastAPI · ReportLab · SQLite · Docker · AWS
+Python · pandas · numpy · scikit-learn · FastAPI · HTML/CSS/JavaScript · ReportLab · SQLite · Docker · AWS
 
 ---
 

@@ -9,5 +9,7 @@ __pycache__
 .env
 *.db
 *.sqlite3
+*.pdf
 docs
 tests
+training

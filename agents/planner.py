@@ -27,6 +27,7 @@ Usage::
 
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence
@@ -210,8 +211,27 @@ class Planner:
 
     # -- execution ---------------------------------------------------------
 
+    @staticmethod
+    def _call(tool: Tool, records: Sequence[Any], options: Optional[Dict[str, Any]]) -> Any:
+        """Run one tool, passing only the options its function accepts.
+
+        The materiality setting matters to validation and trend but means
+        nothing to anomaly detection. Filtering by signature lets one set of
+        run options go to every agent without each having to accept them all.
+        """
+        if not options:
+            return tool.run(records)
+        try:
+            params = inspect.signature(tool.run).parameters
+        except (TypeError, ValueError):
+            return tool.run(records)
+        takes_any = any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values())
+        usable = {k: v for k, v in options.items() if takes_any or k in params}
+        return tool.run(records, **usable)
+
     def run(self, records: Sequence[Any], timings: Any = None,
-            only: Optional[Iterable[str]] = None) -> tuple[Dict[str, Any], Plan]:
+            only: Optional[Iterable[str]] = None,
+            options: Optional[Dict[str, Any]] = None) -> tuple[Dict[str, Any], Plan]:
         """Plan, then run the selected agents.
 
         A failing agent is recorded as skipped rather than allowed to bring
@@ -230,9 +250,9 @@ class Planner:
             try:
                 if timings is not None and hasattr(timings, "stage"):
                     with timings.stage(name):
-                        results[name] = tool.run(records)
+                        results[name] = self._call(tool, records, options)
                 else:
-                    results[name] = tool.run(records)
+                    results[name] = self._call(tool, records, options)
             except Exception as exc:  # noqa: BLE001 - deliberate isolation
                 plan.selected.remove(name)
                 plan.skipped[name] = f"agent raised {type(exc).__name__}: {exc}"

@@ -11,7 +11,7 @@ orchestrator.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -128,6 +128,15 @@ class ReviewResponse(BaseModel):
     currency: str
     record_count: int
 
+    review_id: Optional[int] = Field(
+        None,
+        description="Id of the saved review, for the PDF and reviewer actions. "
+                    "None when review history isn't installed or saving failed.",
+    )
+    materiality: Optional[float] = Field(
+        None, description="Materiality the review was graded at. None means the agents' defaults.",
+    )
+
     risk_score: Optional[int] = None
     risk_result: Optional[Dict[str, Any]] = None
 
@@ -162,3 +171,19 @@ class ErrorResponse(BaseModel):
 
     error: str = Field(..., description="What went wrong.")
     detail: Optional[str] = Field(None, description="How to fix it.")
+
+
+class ActionRequest(BaseModel):
+    """A reviewer's decision on one finding."""
+
+    finding_ref: str = Field(..., min_length=1,
+                             description="Identifies the finding, e.g. its rule_id and year.")
+    status: Literal["VERIFIED", "NEEDS_INVESTIGATION", "DISMISSED"]
+    note: str = Field("", max_length=2000)
+    reviewer: str = Field("", max_length=120)
+
+
+class ActionCreated(BaseModel):
+    """The reviewer action that was just recorded."""
+
+    action_id: int

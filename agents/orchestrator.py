@@ -50,6 +50,8 @@ class AnalysisResult:
     period: str = ""
     currency: str = "$"
     record_count: int = 0
+    #: Materiality the review was graded at. None means each agent's own default.
+    materiality: Optional[float] = None
 
     validation_results: List[Any] = field(default_factory=list)
     yoy_results: List[Any] = field(default_factory=list)
@@ -112,6 +114,7 @@ class AnalysisResult:
             "period": self.period,
             "currency": self.currency,
             "record_count": self.record_count,
+            "materiality": self.materiality,
             "risk_score": self.risk_score,
             "risk_result": self.risk_result.to_dict()
             if hasattr(self.risk_result, "to_dict") else self.risk_result,
@@ -169,14 +172,16 @@ class ReviewOrchestrator:
 
         self._planner = Planner()
         requirements = {
-            "validation": Requirement.STATEMENT_DETAIL,
+            # Always runs: the agent itself skips each check whose inputs are
+            # missing, and its ratio checks work on data with no balance sheet.
+            "validation": Requirement.NONE,
             "trend": Requirement.MULTIPLE_PERIODS,
             "anomaly": Requirement.NONE,
             "recurring": Requirement.RECURRENCE_WINDOW,
             "peer": Requirement.PEER_GROUP,
         }
         descriptions = {
-            "validation": "Five accounting identity checks",
+            "validation": "Accounting identity and ratio checks",
             "trend": "Year-on-year movement, ratios and forecasting",
             "anomaly": "Statistical and model-based outlier detection",
             "recurring": "Issues repeating across several periods",
@@ -254,10 +259,19 @@ class ReviewOrchestrator:
     # -- the pipeline ------------------------------------------------------
 
     def run(self, records: Sequence[Any],
-            document_texts: Optional[Sequence[str]] = None) -> AnalysisResult:
-        """Review a set of records and return everything the run produced."""
+            document_texts: Optional[Sequence[str]] = None,
+            materiality: Optional[float] = None) -> AnalysisResult:
+        """Review a set of records and return everything the run produced.
+
+        Args:
+            records: The submission, one object per company-year.
+            document_texts: Free text from uploaded files, screened before use.
+            materiality: Passed to every agent that accepts it (validation,
+                trend), so the interface slider re-grades findings. None leaves
+                each agent on its own default.
+        """
         timings = Timings()
-        result = AnalysisResult()
+        result = AnalysisResult(materiality=materiality)
 
         if not records:
             result.warnings.append("No records were supplied, so nothing was reviewed.")
@@ -273,7 +287,8 @@ class ReviewOrchestrator:
                 self._screen_documents(document_texts, result)
 
         # Analysis agents, each run only where the data supports it.
-        outputs, plan = self._planner.run(records, timings=timings)
+        options = {"materiality": materiality} if materiality is not None else None
+        outputs, plan = self._planner.run(records, timings=timings, options=options)
         result.coverage = plan.to_dict()
 
         result.validation_results = list(outputs.get("validation") or [])

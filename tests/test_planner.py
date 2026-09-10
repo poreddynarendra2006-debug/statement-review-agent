@@ -187,3 +187,34 @@ def test_plan_summary_is_readable(planner, kaggle_only_records):
 
 def test_empty_plan_summary_does_not_crash():
     assert Plan().summary() == "ran nothing"
+
+
+# --- run options --------------------------------------------------------
+
+
+def test_options_reach_only_the_tools_that_accept_them(financial_records):
+    seen = {}
+
+    def validation(records, materiality=0.05):
+        seen["validation"] = materiality
+        return "ok"
+
+    def anomaly(records):
+        seen["anomaly"] = "called without options"
+        return "ok"
+
+    planner = Planner()
+    planner.register("validation", validation, requires=Requirement.STATEMENT_DETAIL)
+    planner.register("anomaly", anomaly)
+    _, plan = planner.run(financial_records, options={"materiality": 0.01})
+
+    assert seen == {"validation": 0.01, "anomaly": "called without options"}
+    assert plan.skipped == {}, "a tool that ignores options must not be marked as failed"
+
+
+def test_without_options_tools_keep_their_defaults(financial_records):
+    planner = Planner()
+    planner.register("validation", lambda records, materiality=0.05: materiality,
+                     requires=Requirement.STATEMENT_DETAIL)
+    results, _ = planner.run(financial_records)
+    assert results["validation"] == 0.05

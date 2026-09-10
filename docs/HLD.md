@@ -155,7 +155,7 @@ These six objects are the interfaces between components. They are frozen at the 
 | ML | scikit-learn (IsolationForest) | Unsupervised peer-outlier detection |
 | GenAI | Gemini, OpenAI, offline heuristic | Multi-provider with a no-key fallback |
 | API | FastAPI, uvicorn | Typed, documented REST surface |
-| UI | Streamlit, Plotly | Fastest route to a usable analytical workspace |
+| UI | HTML, CSS, JavaScript served by FastAPI | The reviewer's screens come from the same service as the API |
 | Reporting | ReportLab | Programmatic PDF generation |
 | Storage | SQLite | Zero-configuration persistence |
 | Packaging | Docker | Reproducible runtime |
@@ -238,7 +238,7 @@ These six objects are the interfaces between components. They are frozen at the 
 
 | Environment | Purpose | Runs on | Data |
 |:--|:--|:--|:--|
-| **Local** | Development | Developer machine, `streamlit run app.py` | Demo CSVs, local SQLite |
+| **Local** | Development | Developer machine, `uvicorn api.main:app --reload` | Demo CSVs, local SQLite |
 | **CI** | Verification on every push | GitHub Actions, ephemeral Ubuntu runners | Fixtures and the generated benchmark corpus |
 | **Demo** | The live URL shown to the panel | AWS App Runner, public HTTPS | Seeded demo data, ephemeral SQLite |
 
@@ -247,26 +247,25 @@ There is no production environment. The demo environment is treated *as if* it w
 ### 11.2 Runtime topology
 
 ```
-                    HTTPS (managed TLS)
-                            |
-                   +--------+--------+
-                   |   Container      |
-                   |                  |
-                   |  entrypoint.sh   |
-                   |    |        |    |
-                   |    |        +--> uvicorn  : 8000   (FastAPI, background)
-                   |    +-----------> streamlit: 8501   (workspace, foreground)
-                   |         |                          |
-                   |         +--------- shared ---------+
-                   |                 review engine      |
-                   |                        |           |
-                   |                  SQLite volume     |
-                   +----------------------------------+
+                 HTTPS (managed TLS)
+                         |
+                +--------+--------+
+                |    Container    |
+                |                 |
+                |  uvicorn :$PORT |
+                |        |        |
+                |   FastAPI app --+-- /review, /review/upload, /reviews, /monitoring   (API)
+                |        |        +-- /  static files from ui/                        (screens)
+                |        |        |
+                |  review engine  |
+                |        |        |
+                |  SQLite volume  |
+                +-----------------+
 ```
 
-**One image, two processes.** The API and the workspace share the same review engine in-process rather than calling each other over the network. An entrypoint script starts uvicorn in the background and Streamlit in the foreground, so the container's lifecycle follows the UI process.
+**One image, one process, one port.** FastAPI serves both the API and the reviewer's screens, which are static HTML, CSS and JavaScript from `ui/`. The screens call the API on the same origin, so there is no cross-origin configuration to get wrong in production, and every container host we might use routes a single port.
 
-**Rejected alternative:** two separate services, one per process. Correct for production, wrong here — it doubles the free-tier footprint and adds a network hop between components that are deployed together anyway. Recorded so the panel knows it was a choice, not an oversight.
+**Rejected alternative:** a separate web server for the screens. It adds a second process and a second port to keep in step, for files that never change at runtime.
 
 ### 11.3 Build and release pipeline
 
@@ -319,7 +318,7 @@ All configuration is by environment variable, never in the image:
 |:--|:--|
 | **ECS Fargate + ALB** | The conventional production answer. Rejected for this build — the load balancer alone costs more than the workload, and it adds a day of networking setup for no demonstrable gain at one container. |
 | **EC2 `t3.micro` + Docker** | The Free Tier fallback if no credits are available: 750 hours a month for twelve months. Rejected as primary because TLS, restarts and deploys all become manual. |
-| **AWS Lambda** | Rejected — Streamlit is a long-lived server process, not a request-scoped function. |
+| **AWS Lambda** | Rejected — the review service is a long-lived server process that keeps the model loaded, not a request-scoped function. |
 | **Elastic Beanstalk** | Rejected — an older abstraction over the same EC2 machinery, with more configuration than App Runner for the same result. |
 
 **Known constraints, both handled**
@@ -331,80 +330,4 @@ Naming these limits explicitly is better than discovering one on stage.
 
 ### 11.6 Health, readiness and rollback
 
-- **Health check:** `HEALTHCHECK` in the Dockerfile polls Streamlit's `/_stcore/health`; the host will not route traffic to an unhealthy container.
-- **Readiness:** the review engine has no warm-up, so healthy means ready.
-- **Rollback:** every deploy is tied to a commit; rolling back is redeploying the previous image. Because the image is built in CI and never on a laptop, the artifact that ran yesterday can be reproduced exactly.
-- **Failure mode:** if the container will not start, the local `docker run` path and `streamlit run app.py` both remain valid demo routes.
-
-### 11.7 Scaling
-
-The API is **stateless** — findings are computed per request and nothing is held between calls — so it scales horizontally behind a load balancer with no changes. Two limits are known and documented rather than hidden:
-
-1. **SQLite is single-writer.** Concurrent reviewers would contend. PostgreSQL is the roadmap item that removes this.
-2. **The LLM provider rate-limits.** The deterministic engine has no such limit, so under pressure the system degrades to the offline reviewer rather than failing.
-
-### 11.8 Demo-day runbook
-
-| Step | When | Action |
-|:--|:--|:--|
-| 1 | T−30 min | Open the live URL to wake the container from idle |
-| 2 | T−20 min | Run one full review end to end; confirm findings and PDF export |
-| 3 | T−15 min | Confirm the local container also runs, as fallback route two |
-| 4 | T−10 min | Confirm the recorded walkthrough is on the machine, as fallback route three |
-| 5 | On failure | Switch to local, then to the recording. Do not debug in front of the panel. |
-
-Three independent routes to a working demo — hosted, local, recorded. Each fails for different reasons, which is the point.
-
----
-
-## 12. Observability
-
-- **Structured logging** at every stage, with configurable level.
-- **Run log** persisted per review: checks executed, findings raised, model tokens consumed, elapsed time.
-- **Monitoring view** in the workspace summarising recent runs, so operational behaviour is visible rather than inferred.
-
----
-
-## 13. Testing and evaluation strategy
-
-| Layer | Approach |
-|:--|:--|
-| Unit | Each rule and analysis function tested in isolation, including zero-division and missing-field cases |
-| Integration | End-to-end pipeline over known datasets |
-| **Detection benchmark** | Defects planted under a fixed seed with recorded ground truth; precision, recall and F1 reported |
-| Regression | The benchmark runs in CI, so quoted figures are re-verified on every commit |
-
-The benchmark reports **1,240 validation checks against 194 planted defects with no misses and no false positives**. A perfect score is the expected outcome for exact arithmetic identities; the informative figure is the **false-positive count across 1,009 clean checks**, which is zero.
-
----
-
-## 14. Security, safety and compliance
-
-- Financial statement data only; no personal or customer data is processed.
-- Credentials supplied via environment variables and never committed.
-- In offline mode no data leaves the host, which makes the system safe to demonstrate on an untrusted network.
-- Output language is deliberately neutral: inconsistencies are reported for human review, never characterised as fraud.
-- The system states plainly that it does not provide investment advice.
-
----
-
-## 15. Risks and mitigations
-
-| Risk | Impact | Mitigation |
-|:--|:--|:--|
-| Real dataset column names differ from the internal schema | Ingestion fails | Normalisation layer with alias mapping and explicit unmapped-column reporting |
-| AI provider unreachable during evaluation | Demo failure | Offline heuristic reviewer; no key required |
-| Integration crunch late in the build | Broken pipeline at freeze | Contracts frozen day one; contract tests in CI |
-| Live demo environment failure | Lost marks | Recorded walkthrough held as backup |
-| Model narrative contradicts computed figures | Loss of trust | Evidence Agent supplies only verified figures; narrative is checked against them |
-
----
-
-## 16. Roadmap
-
-1. ERP connectors — SAP S/4HANA, NetSuite, QuickBooks
-2. Multi-currency normalisation with live FX rates
-3. Industry-specific ratio benchmarks
-4. Queue-backed batch review across a portfolio
-5. Migration from SQLite to PostgreSQL for concurrent multi-reviewer use
-6. Full audit trail export for regulatory review
+- **Health check:** the Dockerfile `HEALTHCHECK` polls `GET /health`; the host will not route traffic to an unhealthy container.

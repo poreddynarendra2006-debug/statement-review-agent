@@ -129,14 +129,18 @@ def test_heuristic_review_mode_is_recorded(validation_results, financial_records
 # --- agent selection ----------------------------------------------------
 
 
-def test_kaggle_records_skip_the_accounting_checks(full_orchestrator, kaggle_only_records):
-    """Records without statement detail must not fail the accounting rules."""
+def test_validation_runs_on_records_without_statement_detail(full_orchestrator, kaggle_only_records):
+    """Kaggle rows have no balance sheet, but the ratio checks still apply.
+
+    The agent skips the accounting identities itself, check by check. If the
+    planner skipped the whole agent, the real ROE mismatches in the Kaggle
+    data would never be reported.
+    """
     result = full_orchestrator.run(kaggle_only_records)
 
-    assert "validation" in result.coverage["skipped"]
-    assert result.validation_results == []
+    assert "validation" in result.coverage["selected"]
+    assert "validation" not in result.coverage["skipped"]
     assert result.yoy_results, "trend analysis still applies"
-    assert any("validation did not run" in w for w in result.warnings)
 
 
 def test_single_period_skips_trend(full_orchestrator, financial_records):
@@ -207,3 +211,33 @@ def test_to_dict_is_json_serialisable(full_orchestrator, financial_records):
     assert payload["elapsed_seconds"] > 0
     assert len(payload["failed_validations"]) == 1
     assert payload["coverage"]["selected"]
+
+
+# --- materiality --------------------------------------------------------
+
+
+def test_materiality_reaches_the_validation_agent(validation_results, financial_records):
+    seen = {}
+
+    def validation(records, materiality=0.05):
+        seen["materiality"] = materiality
+        return validation_results
+
+    result = ReviewOrchestrator(validation=validation).run(financial_records, materiality=0.01)
+
+    assert seen["materiality"] == 0.01, "the slider value must reach the agent"
+    assert result.materiality == 0.01
+    assert result.to_dict()["materiality"] == 0.01
+
+
+def test_no_materiality_leaves_the_agent_default(validation_results, financial_records):
+    seen = {}
+
+    def validation(records, materiality=0.05):
+        seen["materiality"] = materiality
+        return validation_results
+
+    result = ReviewOrchestrator(validation=validation).run(financial_records)
+
+    assert seen["materiality"] == 0.05
+    assert result.materiality is None
