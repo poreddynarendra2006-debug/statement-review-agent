@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinSight AI - Financial Document Upload</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .dropzone {
+      border: 2px dashed var(--accent-cyan);
+      background-color: rgba(6, 182, 212, 0.04);
+      border-radius: var(--radius-lg);
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .dropzone:hover, .dropzone.dragover {
+      background-color: rgba(6, 182, 212, 0.1);
+      border-color: var(--accent-blue);
+      transform: scale(1.005);
+    }
+    .dropzone-icon {
+      font-size: 3rem;
+      color: var(--accent-cyan);
+      margin-bottom: 16px;
+    }
+    .materiality-control {
+      margin-bottom: 24px;
+      padding: 16px 20px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .materiality-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .materiality-slider-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-width: 250px;
+    }
+    .materiality-slider-group input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent-cyan);
+      cursor: pointer;
+    }
+    .materiality-val {
+      font-weight: 700;
+      color: var(--accent-cyan);
+      min-width: 48px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand-header">
+        <div class="brand-icon"><i class="fa-solid fa-chart-line"></i></div>
+        <div class="brand-name">FinSight AI</div>
+        <span class="brand-tag">AGENT</span>
+      </div>
+
+      <ul class="nav-menu">
+        <li class="nav-item">
+          <a href="dashboard.html"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+        </li>
+        <li class="nav-item active">
+          <a href="upload.html"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Statements</a>
+        </li>
+        <li class="nav-item">
+          <a href="findings.html"><i class="fa-solid fa-triangle-exclamation"></i> Audit Findings</a>
+        </li>
+        <li class="nav-item">
+          <a href="trends.html"><i class="fa-solid fa-chart-area"></i> Ratio Trends</a>
+        </li>
+        <li class="nav-item">
+          <a href="risk.html"><i class="fa-solid fa-shield-cat"></i> Risk Matrix</a>
+        </li>
+        <li class="nav-item">
+          <a href="chatbot.html"><i class="fa-solid fa-robot"></i> AI Summary</a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="avatar" id="userAvatar">FA</div>
+          <div class="user-info">
+            <span class="user-name" id="userNameDisplay">Auditor User</span>
+            <span class="user-role" id="userRoleDisplay">Senior Financial Auditor</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-wrapper">
+      <header class="top-header">
+        <div class="page-title-group">
+          <h1>Financial Statement Upload</h1>
+          <p>Ingest financial statements in CSV or Excel format for automated AI review and analysis.</p>
+        </div>
+
+        <div class="header-actions">
+          <button class="header-btn" id="themeToggleBtn" title="Toggle Theme">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="signOut()" title="Sign Out">
+            <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+          </button>
+        </div>
+      </header>
+
+      <div class="content-container">
+        <!-- Upload Dropzone & Settings Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-file-invoice-dollar"></i> Upload Statement for AI Review
+            </div>
+          </div>
+
+          <!-- Materiality Threshold Setting -->
+          <div class="materiality-control">
+            <div class="materiality-info">
+              <label for="materialitySlider" style="font-weight: 600; font-size: 0.95rem;">Materiality Threshold</label>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">
+                Defines the percentage cutoff for variance and ratio deviation filtering (1% to 20%).
+              </span>
+            </div>
+            <div class="materiality-slider-group">
+              <input type="range" id="materialitySlider" min="0.01" max="0.20" step="0.01" value="0.10">
+              <span class="materiality-val" id="materialityDisplay">10.0%</span>
+            </div>
+          </div>
+
+          <div class="dropzone" id="dropzone">
+            <input type="file" id="fileInput" style="display: none;" accept=".csv,.xlsx">
+            <div class="dropzone-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 8px;">Drag & Drop Financial Statement File</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">
+              Supports CSV (.csv) and Excel (.xlsx) financial statements.
+            </p>
+            <button class="btn btn-primary" id="browseBtn">
+              <i class="fa-solid fa-folder-open"></i> Browse Local Files
+            </button>
+          </div>
+
+          <!-- Processing / Error Indicator -->
+          <div id="processingSection" style="margin-top: 24px; display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span id="processingStatus" style="font-weight: 600; font-size: 0.9rem; color: var(--accent-cyan);">
+                <i class="fa-solid fa-spinner fa-spin"></i> Processing statement & running AI rules...
+              </span>
+            </div>
+          </div>
+          <div id="uploadErrorArea" style="margin-top: 16px; display: none;" class="badge badge-high"></div>
+        </div>
+
+        <!-- Live File Data Preview Card -->
+        <div class="card" id="filePreviewSection" style="display: none;">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-table"></i> Upload Data Preview
+            </div>
+            <div id="sheetSelectorWrapper" style="display: none; align-items: center; gap: 6px;">
+              <label for="sheetSelect" style="font-size: 0.8rem; color: var(--text-muted);">Worksheet:</label>
+              <select id="sheetSelect" class="btn btn-secondary btn-sm"></select>
+            </div>
+          </div>
+
+          <!-- Metadata Summary Pills -->
+          <div style="display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; font-size: 0.85rem; background: var(--bg-input); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <div><span style="color: var(--text-muted);">File Name:</span> <strong id="previewFileName" style="color: var(--accent-cyan);">-</strong></div>
+            <div><span style="color: var(--text-muted);">Size:</span> <strong id="previewFileSize" style="color: var(--text-main);">-</strong></div>
+            <div><span style="color: var(--text-muted);">Rows:</span> <strong id="previewRowCount" style="color: var(--status-success);">-</strong></div>
+            <div><span style="color: var(--text-muted);">Columns:</span> <strong id="previewColCount" style="color: var(--status-info);">-</strong></div>
+          </div>
+
+          <!-- Data Preview Table -->
+          <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+            <table class="custom-table" id="filePreviewTable">
+              <thead id="previewTableHead"></thead>
+              <tbody id="previewTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Recent Reviews Table -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-list-check"></i> Recent Reviews
+            </div>
+            <button class="btn btn-secondary btn-sm" id="refreshReviewsBtn">
+              <i class="fa-solid fa-rotate"></i> Refresh List
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table" id="documentsTable">
+              <thead>
+                <tr>
+                  <th>Review ID</th>
+                  <th>File Name</th>
+                  <th>Materiality</th>
+                  <th>Created Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="documentsTableBody">
+                <tr>
+                  <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i> Loading recent reviews...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <footer class="page-footer">
+          Potential issues for human review. Not an audit opinion.
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/upload.js"></script>
+</body>
+</html>

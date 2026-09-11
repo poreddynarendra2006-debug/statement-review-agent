@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinSight AI - AI Summary</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand-header">
+        <div class="brand-icon"><i class="fa-solid fa-chart-line"></i></div>
+        <div class="brand-name">FinSight AI</div>
+        <span class="brand-tag">AGENT</span>
+      </div>
+
+      <ul class="nav-menu">
+        <li class="nav-item">
+          <a href="dashboard.html"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a href="upload.html"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Statements</a>
+        </li>
+        <li class="nav-item">
+          <a href="findings.html"><i class="fa-solid fa-triangle-exclamation"></i> Audit Findings</a>
+        </li>
+        <li class="nav-item">
+          <a href="trends.html"><i class="fa-solid fa-chart-area"></i> Ratio Trends</a>
+        </li>
+        <li class="nav-item">
+          <a href="risk.html"><i class="fa-solid fa-shield-cat"></i> Risk Matrix</a>
+        </li>
+        <li class="nav-item active">
+          <a href="chatbot.html"><i class="fa-solid fa-robot"></i> AI Summary</a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="avatar" id="userAvatar">FA</div>
+          <div class="user-info">
+            <span class="user-name" id="userNameDisplay">Auditor User</span>
+            <span class="user-role" id="userRoleDisplay">Senior Financial Auditor</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-wrapper">
+      <header class="top-header">
+        <div class="page-title-group">
+          <h1>AI Executive Statement Summary</h1>
+          <p id="summarySubhead">Autonomous AI synthesis of financial statement data, ratios, and risk flags.</p>
+        </div>
+
+        <div class="header-actions">
+          <button class="header-btn" id="themeToggleBtn" title="Toggle Theme">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="signOut()" title="Sign Out">
+            <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+          </button>
+        </div>
+      </header>
+
+      <div class="content-container" id="summaryContainer">
+        <!-- Will be populated dynamically by js/chatbot.js -->
+      </div>
+    </main>
+  </div>
+
+  <script src="js/theme.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/chatbot.js"></script>
+</body>
+</html>

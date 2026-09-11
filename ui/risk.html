@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinSight AI - Composite Risk Matrix</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand-header">
+        <div class="brand-icon"><i class="fa-solid fa-chart-line"></i></div>
+        <div class="brand-name">FinSight AI</div>
+        <span class="brand-tag">AGENT</span>
+      </div>
+
+      <ul class="nav-menu">
+        <li class="nav-item">
+          <a href="dashboard.html"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a href="upload.html"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Statements</a>
+        </li>
+        <li class="nav-item">
+          <a href="findings.html"><i class="fa-solid fa-triangle-exclamation"></i> Audit Findings</a>
+        </li>
+        <li class="nav-item">
+          <a href="trends.html"><i class="fa-solid fa-chart-area"></i> Ratio Trends</a>
+        </li>
+        <li class="nav-item active">
+          <a href="risk.html"><i class="fa-solid fa-shield-cat"></i> Risk Matrix</a>
+        </li>
+        <li class="nav-item">
+          <a href="chatbot.html"><i class="fa-solid fa-robot"></i> AI Summary</a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="avatar" id="userAvatar">FA</div>
+          <div class="user-info">
+            <span class="user-name" id="userNameDisplay">Auditor User</span>
+            <span class="user-role" id="userRoleDisplay">Senior Financial Auditor</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-wrapper">
+      <header class="top-header">
+        <div class="page-title-group">
+          <h1>Financial Risk Assessment Matrix</h1>
+          <p id="riskSubhead">Composite risk scoring and multi-agent breakdown for human review.</p>
+        </div>
+
+        <div class="header-actions">
+          <button class="header-btn" id="themeToggleBtn" title="Toggle Theme">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="signOut()" title="Sign Out">
+            <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+          </button>
+        </div>
+      </header>
+
+      <div class="content-container" id="riskContainer">
+        <!-- Hero Risk Score Card & Agent Breakdown Grid -->
+        <div class="grid-2">
+          <!-- Hero Risk Card -->
+          <div class="card" id="riskScoreHeroCard" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 40px 24px;">
+            <div style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 1px; margin-bottom: 8px;">
+              Composite Statement Risk Score
+            </div>
+            <div id="riskScorePoints" style="font-size: 3.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 8px;">
+              0 / 100
+            </div>
+            <div style="margin-bottom: 16px;">
+              <span id="riskLevelBadge" class="badge badge-low" style="font-size: 1rem; padding: 6px 16px;">LOW RISK</span>
+            </div>
+            <p id="riskScoreSummary" style="font-size: 0.88rem; color: var(--text-muted); max-width: 400px; line-height: 1.5;">
+              Loading risk assessment...
+            </p>
+          </div>
+
+          <!-- Risk Points by Agent Bar Chart Card -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa-solid fa-chart-bar"></i> Risk Points by Source Agent
+              </div>
+            </div>
+            <div style="height: 250px; position: relative;">
+              <canvas id="agentRiskChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Risk Contributors Register Table -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-shield-halved"></i> Risk Factor Contributors Register
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Sorted by Risk Points (Descending)</span>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Source Agent / Rule</th>
+                  <th>Risk Points</th>
+                  <th>Severity</th>
+                  <th>Reasoning / Driver</th>
+                </tr>
+              </thead>
+              <tbody id="riskContributorsTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <footer class="page-footer">
+          Potential issues for human review. Not an audit opinion.
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/theme.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/risk.js"></script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinSight AI - Audit & Anomaly Findings</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand-header">
+        <div class="brand-icon"><i class="fa-solid fa-chart-line"></i></div>
+        <div class="brand-name">FinSight AI</div>
+        <span class="brand-tag">AGENT</span>
+      </div>
+
+      <ul class="nav-menu">
+        <li class="nav-item">
+          <a href="dashboard.html"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a href="upload.html"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Statements</a>
+        </li>
+        <li class="nav-item active">
+          <a href="findings.html"><i class="fa-solid fa-triangle-exclamation"></i> Audit Findings</a>
+        </li>
+        <li class="nav-item">
+          <a href="trends.html"><i class="fa-solid fa-chart-area"></i> Ratio Trends</a>
+        </li>
+        <li class="nav-item">
+          <a href="risk.html"><i class="fa-solid fa-shield-cat"></i> Risk Matrix</a>
+        </li>
+        <li class="nav-item">
+          <a href="chatbot.html"><i class="fa-solid fa-robot"></i> AI Summary</a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="avatar" id="userAvatar">FA</div>
+          <div class="user-info">
+            <span class="user-name" id="userNameDisplay">Auditor User</span>
+            <span class="user-role" id="userRoleDisplay">Senior Financial Auditor</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-wrapper">
+      <header class="top-header">
+        <div class="page-title-group">
+          <h1>Potential Issues Requiring Review</h1>
+          <p id="findingsSubhead">Potential inconsistencies and anomaly flags detected by FinSight AI review rules.</p>
+        </div>
+
+        <div class="header-actions">
+          <button class="header-btn" id="themeToggleBtn" title="Toggle Theme">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+          <button class="btn btn-secondary btn-sm" id="exportCsvBtn"><i class="fa-solid fa-download"></i> Export CSV Report</button>
+          <button class="btn btn-secondary btn-sm" onclick="signOut()" title="Sign Out">
+            <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+          </button>
+        </div>
+      </header>
+
+      <div class="content-container" id="findingsContainer">
+        <!-- Filter Bar Card -->
+        <div class="card" style="padding: 18px 24px;">
+          <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; flex: 1;">
+              <div class="search-bar" style="min-width: 240px;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="filterKeyword" placeholder="Search finding ref, description, metric...">
+              </div>
+
+              <select id="filterSource" class="btn btn-secondary" style="padding: 8px 14px; font-size: 0.85rem;">
+                <option value="ALL">All Sources</option>
+                <option value="Validation">Validation Rule</option>
+                <option value="Anomaly">Anomaly Flag</option>
+                <option value="Deviation">Trend Deviation</option>
+              </select>
+
+              <select id="filterSeverity" class="btn btn-secondary" style="padding: 8px 14px; font-size: 0.85rem;">
+                <option value="ALL">All Severities</option>
+                <option value="CRITICAL">Critical</option>
+                <option value="HIGH">High</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="LOW">Low</option>
+              </select>
+
+              <select id="filterCompany" class="btn btn-secondary" style="padding: 8px 14px; font-size: 0.85rem;">
+                <option value="ALL">All Companies</option>
+              </select>
+            </div>
+
+            <div style="font-size: 0.85rem; color: var(--text-muted);">
+              Showing <strong id="findingsCount" style="color: var(--accent-cyan);">0</strong> Potential Issues
+            </div>
+          </div>
+        </div>
+
+        <!-- Findings Table -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="custom-table" id="findingsTable">
+              <thead>
+                <tr>
+                  <th>Finding Ref</th>
+                  <th>Source</th>
+                  <th>Topic / Rule</th>
+                  <th>Description</th>
+                  <th>Severity</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="findingsTableBody">
+                <!-- Data populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <footer class="page-footer">
+          Potential issues for human review. Not an audit opinion.
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <!-- Detail / Inspect Modal -->
+  <div class="modal-backdrop" id="findingModal">
+    <div class="modal-card">
+      <button class="modal-close" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+      
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <span class="badge" id="modalSeverityBadge">HIGH</span>
+        <span style="color: var(--text-muted); font-size: 0.85rem;" id="modalRefId">-</span>
+        <span class="badge badge-low" id="modalSourceBadge">Source</span>
+      </div>
+
+      <h2 id="modalTitle" style="font-size: 1.35rem; font-weight: 700; margin-bottom: 12px; color: var(--text-main);">Finding Detail</h2>
+      
+      <div style="background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px;">
+        <div style="font-size: 0.8rem; color: var(--accent-cyan); font-weight: 600; margin-bottom: 6px;">
+          <i class="fa-solid fa-robot"></i> FinSight Agent Findings & Reasoning:
+        </div>
+        <p id="modalReasoning" style="font-size: 0.9rem; color: var(--text-main); line-height: 1.6;">-</p>
+      </div>
+
+      <!-- Additional Details Key-Value Grid -->
+      <div id="modalDetailsGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; font-size: 0.88rem;"></div>
+
+      <!-- Action Recording Status & Buttons -->
+      <div id="modalActionStatusArea" style="margin-bottom: 16px; display: none;" class="badge badge-low"></div>
+
+      <div style="border-top: 1px solid var(--border-color); padding-top: 16px; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
+        <button class="btn btn-secondary btn-sm" id="modalAcknowledgeBtn">
+          <i class="fa-solid fa-check"></i> Acknowledge
+        </button>
+        <button class="btn btn-secondary btn-sm" id="modalFlagBtn">
+          <i class="fa-solid fa-flag"></i> Flag for Follow-up
+        </button>
+        <button class="btn btn-secondary btn-sm" id="modalDismissBtn">
+          <i class="fa-solid fa-xmark"></i> Dismiss
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/theme.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/findings.js"></script>
+</body>
+</html>
