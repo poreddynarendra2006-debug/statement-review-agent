@@ -192,3 +192,42 @@ class ActionCreated(BaseModel):
     """The reviewer action that was just recorded."""
 
     action_id: int
+
+
+class RegisterRequest(BaseModel):
+    """A new reviewer account.
+
+    Fields are checked in the endpoint rather than here, so a problem comes
+    back as one readable sentence the sign-up screen can show as it is.
+    """
+
+    name: str = Field(..., description="Full name, shown on reviews and reports.")
+    email: str = Field(..., description="Used to sign in. Not case-sensitive.")
+    password: str = Field(..., description="8 to 128 characters, with at least one letter and one number.")
+    role: str = Field(..., description="Senior Financial Auditor, Chief Financial Officer (CFO) "
+                                       "or Risk & Compliance Analyst.")
+
+
+class LoginRequest(BaseModel):
+    """Credentials for signing in."""
+
+    email: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    """A reviewer account. Never includes the password."""
+
+    id: int
+    name: str
+    email: str
+    role: str
+
+
+class LoginResponse(BaseModel):
+    """A signed-in session."""
+
+    token: str = Field(..., description="Send as 'Authorization: Bearer <token>' on every review request.")
+    token_type: Literal["bearer"] = "bearer"
+    expires_at: str = Field(..., description="When the token stops working, in UTC (ISO 8601).")
+    user: UserResponse

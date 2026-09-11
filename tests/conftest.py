@@ -323,6 +323,14 @@ class FakeFindingItem:
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture(autouse=True)
+def sign_in_off_and_own_database(monkeypatch, tmp_path):
+    """Review endpoints skip sign-in unless a test turns it on (tests/test_auth.py),
+    and anything a test writes to SQLite goes to its own file, not the project folder."""
+    monkeypatch.setenv("AUTH_REQUIRED", "false")
+    monkeypatch.setenv("SQLITE_DB_PATH", str(tmp_path / "review.sqlite"))
+
+
 @pytest.fixture
 def excel_bytes():
     """Build an .xlsx in memory: rows for the first sheet, plus optional named sheets."""

@@ -89,6 +89,8 @@ Every setting is an environment variable. **Nothing is baked into the image.**
 | `SQLITE_DB_PATH` | Database file location | No |
 | `LOG_LEVEL` | `DEBUG`, `INFO`, `WARNING`, `ERROR` | No |
 | `AWS_REGION` | Region for S3 and logs | No |
+| `AUTH_REQUIRED` | `false` lets review endpoints run without signing in - local testing only | No - defaults to `true` |
+| `AUTH_TOKEN_HOURS` | How long a sign-in lasts | No - defaults to `12` |
 
 **The container must start successfully with none of these set.** Without a key it runs the offline heuristic reviewer. This is deliberate: an expired or revoked credential degrades the system instead of breaking it, and the demo cannot fail because of a billing problem.
 

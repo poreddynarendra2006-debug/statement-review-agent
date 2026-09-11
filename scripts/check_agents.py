@@ -449,8 +449,9 @@ def check_reporting() -> Tuple[str, str]:
 
     from api.main import _run_review, app
 
-    previous = os.environ.get("SQLITE_DB_PATH")
+    previous = {name: os.environ.get(name) for name in ("SQLITE_DB_PATH", "AUTH_REQUIRED")}
     os.environ["SQLITE_DB_PATH"] = str(Path(tempfile.mkdtemp()) / "manual_check.sqlite")
+    os.environ["AUTH_REQUIRED"] = "false"  # this check is about storage and reports, not sign-in
     try:
         with TestClient(app) as client:
             components = client.get("/health").json().get("components", {})
@@ -494,10 +495,11 @@ def check_reporting() -> Tuple[str, str]:
         return (PASS if ok else CHECK), (
             f"saved and read back, PDF {'ok' if is_pdf else 'missing'}, monitoring HTTP {monitoring.status_code}")
     finally:
-        if previous is None:
-            os.environ.pop("SQLITE_DB_PATH", None)
-        else:
-            os.environ["SQLITE_DB_PATH"] = previous
+        for name, value in previous.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
 
 
 CHECKS: Dict[str, Tuple[str, Callable[[], Tuple[str, str]]]] = {

@@ -8,7 +8,7 @@ Saved reviews, reviewer actions and monitoring. The app uses `database.database`
 
 `__init__.py`, `database.py`, `monitoring.py`
 
-Nothing outside this folder writes SQL; everything goes through these functions.
+Review data is written only through these functions. Reviewer accounts are kept separately by `api/auth.py`, in their own tables in the same file.
 
 ## Never upload
 

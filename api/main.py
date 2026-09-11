@@ -1,5 +1,14 @@
 """The review engine as an HTTP service.
 
+Accounts
+    POST /auth/register                 create a reviewer account
+    POST /auth/login                    sign in; returns a token
+    GET  /auth/me                       the signed-in account
+    POST /auth/logout                   end the session
+
+Review, history and monitoring need "Authorization: Bearer <token>" unless
+AUTH_REQUIRED=false. The service endpoints and the screens stay public.
+
 Review
     POST /review                        submit records as JSON
     POST /review/upload                 upload a CSV or Excel statement file
@@ -42,6 +51,8 @@ from starlette.concurrency import run_in_threadpool
 
 from agents.orchestrator import ReviewOrchestrator
 
+from .auth import prepare_accounts, require_user
+from .auth import router as auth_router
 from .dependencies import (
     ALLOWED_UPLOAD_SUFFIXES,
     MAX_UPLOAD_BYTES,
@@ -65,6 +76,7 @@ from .models import (
     HealthResponse,
     ReviewRequest,
     ReviewResponse,
+    UserResponse,
 )
 from .spreadsheets import NoTableFound, excel_to_csv
 
@@ -75,6 +87,7 @@ logger = logging.getLogger("api")
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     prepare_storage()
+    prepare_accounts()
     yield
 
 
@@ -100,6 +113,11 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+app.include_router(auth_router)
+
+#: On every endpoint that reads or writes review data.
+SIGNED_IN = [Depends(require_user)]
 
 UNAVAILABLE = {503: {"model": ErrorResponse, "description": "The component this needs is not installed yet."}}
 
@@ -196,7 +214,7 @@ def health() -> HealthResponse:
 # ---------------------------------------------------------------------------
 
 
-@app.post("/review", response_model=ReviewResponse,
+@app.post("/review", response_model=ReviewResponse, dependencies=SIGNED_IN,
           responses={422: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
           tags=["review"])
 def review(request: ReviewRequest,
@@ -221,7 +239,7 @@ def _as_uploaded(message: str, temp_path: str, name: str) -> str:
     return message.replace(temp_path, name).replace(Path(temp_path).name, name)
 
 
-@app.post("/review/upload", response_model=ReviewResponse,
+@app.post("/review/upload", response_model=ReviewResponse, dependencies=SIGNED_IN,
           responses={413: {"model": ErrorResponse}, 415: {"model": ErrorResponse},
                      422: {"model": ErrorResponse}, **UNAVAILABLE},
           tags=["review"])
@@ -327,29 +345,31 @@ async def review_upload(
 # ---------------------------------------------------------------------------
 
 
-@app.get("/reviews", responses=UNAVAILABLE, tags=["history"])
+@app.get("/reviews", dependencies=SIGNED_IN, responses=UNAVAILABLE, tags=["history"])
 def list_reviews(limit: int = Query(20, ge=1, le=200),
                  reporting: Reporting = Depends(require_reporting)) -> List[Dict[str, Any]]:
     """Recent saved reviews, newest first."""
     return reporting.database.list_reviews(limit=limit)
 
 
-@app.get("/reviews/{review_id}", responses={404: {"model": ErrorResponse}, **UNAVAILABLE},
+@app.get("/reviews/{review_id}", dependencies=SIGNED_IN, responses={404: {"model": ErrorResponse}, **UNAVAILABLE},
          tags=["history"])
 def get_review(review_id: int, reporting: Reporting = Depends(require_reporting)) -> Dict[str, Any]:
     """One saved review, including the full result."""
     return _saved_review(reporting, review_id)
 
 
-@app.get("/reviews/{review_id}/report.pdf", response_class=Response,
+@app.get("/reviews/{review_id}/report.pdf", response_class=Response, dependencies=SIGNED_IN,
          responses={200: {"content": {"application/pdf": {}}},
                     404: {"model": ErrorResponse}, **UNAVAILABLE},
          tags=["reports"])
 def review_report(review_id: int,
                   reviewer_name: str = Query("", max_length=120,
                                              description="Printed on the sign-off block."),
-                  reporting: Reporting = Depends(require_reporting)) -> Response:
+                  reporting: Reporting = Depends(require_reporting),
+                  account: Optional[UserResponse] = Depends(require_user)) -> Response:
     """Download the PDF audit report for a saved review."""
+    reviewer_name = reviewer_name or (account.name if account else "")
     if reporting.report is None:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                             detail="PDF reports are not available yet: the report generator is not installed.")
@@ -362,7 +382,7 @@ def review_report(review_id: int,
     )
 
 
-@app.get("/reviews/{review_id}/actions", responses={404: {"model": ErrorResponse}, **UNAVAILABLE},
+@app.get("/reviews/{review_id}/actions", dependencies=SIGNED_IN, responses={404: {"model": ErrorResponse}, **UNAVAILABLE},
          tags=["history"])
 def list_actions(review_id: int, reporting: Reporting = Depends(require_reporting)) -> List[Dict[str, Any]]:
     """Every reviewer action recorded against a review."""
@@ -370,17 +390,23 @@ def list_actions(review_id: int, reporting: Reporting = Depends(require_reportin
     return reporting.database.get_actions(review_id)
 
 
-@app.post("/reviews/{review_id}/actions", response_model=ActionCreated,
+@app.post("/reviews/{review_id}/actions", response_model=ActionCreated, dependencies=SIGNED_IN,
           status_code=status.HTTP_201_CREATED,
           responses={404: {"model": ErrorResponse}, 422: {"model": ErrorResponse}, **UNAVAILABLE},
           tags=["history"])
 def add_action(review_id: int, action: ActionRequest,
-               reporting: Reporting = Depends(require_reporting)) -> ActionCreated:
-    """Record a reviewer's decision on a finding - the human in the loop."""
+               reporting: Reporting = Depends(require_reporting),
+               account: Optional[UserResponse] = Depends(require_user)) -> ActionCreated:
+    """Record a reviewer's decision on a finding - the human in the loop.
+
+    When someone is signed in, the action is recorded under their account's
+    name, whatever the request says.
+    """
     _saved_review(reporting, review_id)
+    reviewer = account.name if account else action.reviewer
     try:
         action_id = reporting.database.record_action(
-            review_id, action.finding_ref, action.status, action.note, action.reviewer)
+            review_id, action.finding_ref, action.status, action.note, reviewer)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return ActionCreated(action_id=action_id)
@@ -391,28 +417,28 @@ def add_action(review_id: int, action: ActionRequest,
 # ---------------------------------------------------------------------------
 
 
-@app.get("/monitoring/summary", responses=UNAVAILABLE, tags=["monitoring"])
+@app.get("/monitoring/summary", dependencies=SIGNED_IN, responses=UNAVAILABLE, tags=["monitoring"])
 def monitoring_summary(limit: int = Query(50, ge=1, le=500),
                        monitoring: Any = Depends(require_monitoring)) -> Dict[str, Any]:
     """Reviews run, average and slowest duration, average risk, review modes."""
     return monitoring.run_summary(limit=limit)
 
 
-@app.get("/monitoring/stages", responses=UNAVAILABLE, tags=["monitoring"])
+@app.get("/monitoring/stages", dependencies=SIGNED_IN, responses=UNAVAILABLE, tags=["monitoring"])
 def monitoring_stages(limit: int = Query(50, ge=1, le=500),
                       monitoring: Any = Depends(require_monitoring)) -> List[Dict[str, Any]]:
     """Time spent in each pipeline stage, slowest first."""
     return monitoring.stage_performance(limit=limit)
 
 
-@app.get("/monitoring/coverage", responses=UNAVAILABLE, tags=["monitoring"])
+@app.get("/monitoring/coverage", dependencies=SIGNED_IN, responses=UNAVAILABLE, tags=["monitoring"])
 def monitoring_coverage(limit: int = Query(50, ge=1, le=500),
                         monitoring: Any = Depends(require_monitoring)) -> Dict[str, Any]:
     """How often each agent ran or was skipped, and why."""
     return monitoring.agent_coverage(limit=limit)
 
 
-@app.get("/monitoring/recent", responses=UNAVAILABLE, tags=["monitoring"])
+@app.get("/monitoring/recent", dependencies=SIGNED_IN, responses=UNAVAILABLE, tags=["monitoring"])
 def monitoring_recent(limit: int = Query(10, ge=1, le=100),
                       monitoring: Any = Depends(require_monitoring)) -> List[Dict[str, Any]]:
     """The latest reviews with their risk score and duration."""
