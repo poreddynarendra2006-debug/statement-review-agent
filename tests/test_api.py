@@ -221,6 +221,9 @@ def test_review_returns_a_well_formed_result(client, payload):
 
 
 def test_review_works_with_no_components_installed(client, payload):
+    # Set explicitly, so the test holds once teammates' components are in the repo.
+    use(get_orchestrator, ReviewOrchestrator())
+    use(get_reporting, None)
     body = client.post("/review", json=payload).json()
 
     assert body["validation_results"] == []
