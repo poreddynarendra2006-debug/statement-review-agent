@@ -164,6 +164,11 @@ class ReviewResponse(BaseModel):
     elapsed_seconds: float = 0.0
     warnings: List[str] = Field(default_factory=list)
     security_flags: List[SecurityFlag] = Field(default_factory=list)
+    screened_documents: List[str] = Field(
+        default_factory=list,
+        description="Uploaded document text after screening, framed as untrusted content. "
+                    "Only this version is ever given to a model.",
+    )
 
 
 class ErrorResponse(BaseModel):

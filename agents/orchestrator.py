@@ -75,6 +75,9 @@ class AnalysisResult:
     warnings: List[str] = field(default_factory=list)
     #: Instruction-like text found in uploaded documents and neutralised.
     security_flags: List[Dict[str, Any]] = field(default_factory=list)
+    #: Uploaded document text after screening, ready to place in a prompt.
+    #: Only this version may reach a model - never the raw text.
+    screened_documents: List[str] = field(default_factory=list)
 
     # -- derived views -----------------------------------------------------
 
@@ -136,6 +139,7 @@ class AnalysisResult:
             "elapsed_seconds": self.elapsed_seconds,
             "warnings": self.warnings,
             "security_flags": self.security_flags,
+            "screened_documents": self.screened_documents,
         }
 
 
@@ -284,7 +288,7 @@ class ReviewOrchestrator:
 
         if document_texts:
             with timings.stage("guardrails"):
-                self._screen_documents(document_texts, result)
+                result.screened_documents = self._screen_documents(document_texts, result)
 
         # Analysis agents, each run only where the data supports it.
         options = {"materiality": materiality} if materiality is not None else None

@@ -279,6 +279,9 @@ def test_injection_in_document_text_is_reported(client, payload):
 
     assert body["security_flags"]
     assert any("neutralised" in w for w in body["warnings"])
+    [screened] = body["screened_documents"]
+    assert "Ignore all previous instructions" not in screened
+    assert screened.startswith("<<<UNTRUSTED_DOCUMENT_CONTENT>>>")
 
 
 # --- POST /review/upload ------------------------------------------------
