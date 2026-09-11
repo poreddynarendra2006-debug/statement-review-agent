@@ -161,7 +161,7 @@ def _demo(company: str, period: str, score: int, level: str, mode: str, elapsed:
         "forecasts": [], "evaluations": [], "deviations": [], "material_deviations": [], "anomalies": [],
         "recurring_issues": [], "findings": [], "ai_summary": "Example monitoring review.",
         "review_mode": mode,
-        "coverage": {"selected": ["validation", "anomaly"], "skipped": {"forecast": "No forecast model configured"},
+        "coverage": {"selected": ["validation", "trend", "anomaly"], "skipped": {},
                      "facts": {"records": 1200, "companies": 1, "periods": 4}},
         "timings": timings, "elapsed_seconds": elapsed, "warnings": [], "security_flags": []
     }

@@ -23,6 +23,11 @@ DIMINISHING_EXPONENT = 0.35
 DENSITY_WEIGHT = 0.10
 DENSITY_BASE = 10
 
+# Trend deviations are movements to look at, not proven errors, so together
+# they may add at most this many points before the density adjustment.
+CAPPED_SOURCES = {"deviation"}
+STATISTICAL_POINTS_CAP = 25.0
+
 
 @dataclass(frozen=True)
 class RiskContributor:
@@ -296,6 +301,13 @@ def calculate_risk(agent_outputs: Mapping[str, Iterable[Any]]) -> RiskScoreResul
                 occurrences[finding.severity],
             )
         )
+
+    capped = [i for i, f in enumerate(findings) if f.source_agent in CAPPED_SOURCES]
+    capped_total = sum(raw_points[i] for i in capped)
+    if capped_total > STATISTICAL_POINTS_CAP:
+        scale = STATISTICAL_POINTS_CAP / capped_total
+        for i in capped:
+            raw_points[i] *= scale
 
     # Finding density is a modest multiplier. Severity mix remains the main
     # driver, while a high-density review gets a small additional penalty.
