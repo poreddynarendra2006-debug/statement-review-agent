@@ -1,23 +1,21 @@
 name: Deploy to AWS
 
-# Builds the image, pushes it to ECR and tells App Runner to deploy it.
+# Tests the code, builds the image, pushes it to Amazon ECR, moves the AuditLens
+# service on ECS Express Mode onto it, and checks the live /health endpoint.
 #
-# Authentication is by OIDC: GitHub exchanges a short-lived token for an AWS
-# role. No long-lived AWS access key is stored in this repository, which is
-# the single most common way student projects get compromised.
+# Authentication is by GitHub OIDC: the job exchanges a short-lived token for an
+# AWS role, so no AWS access key is stored in this repository.
 #
-# Required repository variables:
-#   AWS_REGION          e.g. ap-south-1
-#   AWS_ROLE_ARN        role GitHub is allowed to assume
-#   ECR_REPOSITORY      e.g. finsight-ai
-#   APPRUNNER_SERVICE_ARN
-#
-# Set them under Settings -> Secrets and variables -> Actions -> Variables.
+# One-time setup is in docs/DEPLOYMENT.md, section 6. Repository variables
+# (Settings -> Secrets and variables -> Actions -> Variables):
+#   AWS_REGION        ap-south-1
+#   AWS_ROLE_ARN      the role this workflow may assume
+#   ECR_REPOSITORY    statement-review
+#   ECS_SERVICE_ARN   arn:aws:ecs:ap-south-1:<account-id>:service/default/auditlens
+#   APP_URL           the service's Application URL, without a trailing slash
 
 on:
-  # Manual only until the AWS resources exist and the four repository
-  # variables below are set. Restore the push trigger once a deploy succeeds,
-  # so a red build then means something is actually broken.
+  # Manual: Actions -> Deploy to AWS -> Run workflow.
   workflow_dispatch:
 
 concurrency:
@@ -29,8 +27,26 @@ permissions:
   contents: read
 
 jobs:
+  test:
+    name: Run the tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Test
+        run: python -m pytest -q
+
   deploy:
     name: Build, push and deploy
+    needs: test
     runs-on: ubuntu-latest
     environment: production
 
@@ -49,22 +65,39 @@ jobs:
 
       - name: Build and push image
         env:
-          REGISTRY: ${{ steps.ecr.outputs.registry }}
-          REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
         run: |
-          # Tag with the commit SHA as well as latest, so a rollback is
-          # simply redeploying an earlier tag.
-          docker build -t "$REGISTRY/$REPOSITORY:$GITHUB_SHA" \
-                       -t "$REGISTRY/$REPOSITORY:latest" .
-          docker push "$REGISTRY/$REPOSITORY:$GITHUB_SHA"
-          docker push "$REGISTRY/$REPOSITORY:latest"
+          # Tagged with the commit, so every release in ECR is also a rollback point.
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
 
-      - name: Deploy to App Runner
+      - name: Deploy to ECS Express Mode
         run: |
-          aws apprunner start-deployment \
-            --service-arn "${{ vars.APPRUNNER_SERVICE_ARN }}" \
+          # Only the image changes; port, health check, variables and scaling stay.
+          aws ecs update-express-gateway-service \
+            --service-arn "${{ vars.ECS_SERVICE_ARN }}" \
+            --primary-container "image=$IMAGE" \
+            --region "${{ vars.AWS_REGION }}" \
+            --no-cli-pager > /dev/null
+
+      - name: Wait for the new version to take over
+        run: |
+          SERVICE_ARN="${{ vars.ECS_SERVICE_ARN }}"
+          aws ecs wait services-stable \
+            --cluster "$(echo "$SERVICE_ARN" | cut -d/ -f2)" \
+            --services "$SERVICE_ARN" \
             --region "${{ vars.AWS_REGION }}"
 
-      - name: Report the deployed image
+      - name: Check the live health endpoint
         run: |
-          echo "Deployed $GITHUB_SHA to App Runner" >> "$GITHUB_STEP_SUMMARY"
+          for attempt in $(seq 1 20); do
+            if curl -fsS "${{ vars.APP_URL }}/health"; then
+              echo
+              echo "Deployed ${{ github.sha }} to ${{ vars.APP_URL }}" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "The service did not report healthy after the deploy." >&2
+          exit 1

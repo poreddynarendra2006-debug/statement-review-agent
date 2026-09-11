@@ -239,52 +239,55 @@ These six objects are the interfaces between components. They are frozen at the 
 | Environment | Purpose | Runs on | Data |
 |:--|:--|:--|:--|
 | **Local** | Development | Developer machine, `uvicorn api.main:app --reload` | Demo CSVs, local SQLite |
-| **CI** | Verification on every push | GitHub Actions, ephemeral Ubuntu runners | Fixtures and the generated benchmark corpus |
-| **Demo** | The live URL shown to the panel | AWS App Runner, public HTTPS | Seeded demo data, ephemeral SQLite |
+| **Container test** | The exact image, before it is released | Docker Desktop, `docker run -p 8000:8000 auditlens` | A fresh SQLite database inside the container |
+| **Demo** | The live URL shown to the panel | AWS ECS Express Mode on Fargate, `ap-south-1`, public HTTPS | Seeded demo data; SQLite that resets on every deploy |
 
-There is no production environment. The demo environment is treated *as if* it were production — same image, same configuration mechanism — so the deployment story is honest rather than aspirational.
+There is no production environment. The demo environment is treated *as if* it were production - same image, same configuration mechanism - so the deployment story is honest rather than aspirational.
 
 ### 11.2 Runtime topology
 
 ```
-                 HTTPS (managed TLS)
+        Internet  (HTTPS, certificate managed by AWS)
                          |
-                +--------+--------+
-                |    Container    |
-                |                 |
-                |  uvicorn :$PORT |
-                |        |        |
-                |   FastAPI app --+-- /review, /review/upload, /reviews, /monitoring   (API)
-                |        |        +-- /  static files from ui/                        (screens)
-                |        |        |
-                |  review engine  |
-                |        |        |
-                |  SQLite volume  |
-                +-----------------+
+         Application Load Balancer  --  GET /health every 30 s
+                         |
+                 HTTP to port 8000
+                         |
+            +------------+------------+
+            |  Fargate task (1 of 1)  |
+            |                         |
+            |  uvicorn :8000          |
+            |       |                 |
+            |  FastAPI app -----------+-- /auth, /review, /reviews, /monitoring   (API)
+            |       |                 +-- /  static files from ui/                (screens)
+            |       |                 |
+            |  review engine          |
+            |       |                 |
+            |  SQLite (task storage)  |
+            +-------------------------+
 ```
 
-**One image, one process, one port.** FastAPI serves both the API and the reviewer's screens, which are static HTML, CSS and JavaScript from `ui/`. The screens call the API on the same origin, so there is no cross-origin configuration to get wrong in production, and every container host we might use routes a single port.
+**One image, one process, one port.** FastAPI serves both the API and the reviewer's screens, which are static HTML, CSS and JavaScript from `ui/`. The screens call the API on the same origin, so there is no cross-origin configuration to get wrong, and the load balancer routes a single port.
 
 **Rejected alternative:** a separate web server for the screens. It adds a second process and a second port to keep in step, for files that never change at runtime.
 
 ### 11.3 Build and release pipeline
 
 ```
-  git push
+  code on main
      |
-  GitHub Actions
+  python -m pytest                  <- every test must pass
      |
-     ├─ pytest on Python 3.11 and 3.12       ← fails the build on any regression
-     ├─ python -m benchmark.run              ← detection metrics re-verified
-     ├─ upload benchmark results as artifact
-     └─ docker build                         ← fails the build on a broken image
+  docker build, run locally          <- /health must answer before release
      |
-  Image published
+  docker push to ECR                 <- tagged with the commit or a version
      |
-  Host pulls and restarts  →  health check  →  live
+  aws ecs update-express-gateway-service  (image only)
+     |
+  canary deployment  ->  /health passes  ->  live
 ```
 
-The gate that matters: **the benchmark runs in CI**, so the precision and recall figures quoted in section 13 cannot go stale. If someone weakens a rule, the build goes red before the number on the slide becomes a lie.
+The same steps run by hand (`docs/DEPLOYMENT.md`, section 5) or from GitHub Actions (`.github/workflows/deploy-aws.yml`), which also waits for the service to stabilise and checks the live `/health`. The anomaly benchmark is run on demand with `python -m finsight --benchmark`.
 
 ### 11.4 Configuration and secrets
 
@@ -292,42 +295,47 @@ All configuration is by environment variable, never in the image:
 
 | Variable | Purpose | Required |
 |:--|:--|:--|
-| `LLM_PROVIDER` | `gemini`, `openai`, or `heuristic` | No — defaults to heuristic |
-| `GEMINI_API_KEY` / `OPENAI_API_KEY` | Provider credential | No |
+| `AUTH_REQUIRED` | Sign-in for review endpoints; `false` only for local testing | No - defaults to `true` |
+| `AUTH_TOKEN_HOURS` | How long a sign-in lasts | No - defaults to 12 |
 | `SQLITE_DB_PATH` | Database location | No |
+| `MAX_UPLOAD_MB` | Largest upload accepted | No - defaults to 10 |
 | `LOG_LEVEL` | Logging verbosity | No |
 
-`.env.example` documents every variable; `.env` is gitignored and never committed. **The image starts successfully with no variables set at all** — absent a key it runs the offline reviewer. This is deliberate: it means a leaked or expired credential degrades the system rather than breaking it, and the demo cannot fail because of a billing problem.
+**No secrets are needed.** The application calls no hosted AI service, and GitHub deploys through a short-lived OIDC role rather than stored AWS keys. `.env.example` documents every variable; `.env` is gitignored.
 
 ### 11.5 Hosting
 
-**Chosen: AWS.** The image is stored in **Elastic Container Registry (ECR)** and run by **App Runner**, which provides managed HTTPS, health checks and autoscaling from a container image with no cluster to operate.
+**Chosen: AWS ECS Express Mode.** The image is stored in **Amazon ECR** and run by **ECS Express Mode** on Fargate, which creates the load balancer, HTTPS certificate, security groups, scaling and deployment rollback from three inputs: an image, a task execution role and an infrastructure role.
 
 | AWS service | Role |
 |:--|:--|
-| **ECR** | Stores the container image; CI pushes each build here |
-| **App Runner** | Runs the container, terminates TLS, scales, health-checks |
-| **Secrets Manager** | Holds the AI provider API key; injected at runtime, never in the image |
-| **S3** | Stores generated PDF reports and uploaded statements |
-| **CloudWatch Logs** | Receives structured application logs; source for the monitoring view |
-| **IAM + GitHub OIDC** | Lets CI push and deploy without long-lived AWS keys in GitHub |
+| **ECR** | Stores the container images; every release is a tagged, reusable rollback point |
+| **ECS Express Mode (Fargate)** | Runs the container; canary deployments with automatic rollback |
+| **Application Load Balancer + ACM certificate** | Created by Express Mode; terminates HTTPS and health-checks `/health` |
+| **IAM** | Task execution role, infrastructure role (with an added read-only inline policy), and an optional GitHub deploy role |
+| **CloudWatch Logs** | Receives the application's output |
+| **AWS Budgets** | Cost alert at $10 a month |
 
 **Alternatives considered**
 
 | Option | Verdict |
 |:--|:--|
-| **ECS Fargate + ALB** | The conventional production answer. Rejected for this build — the load balancer alone costs more than the workload, and it adds a day of networking setup for no demonstrable gain at one container. |
-| **EC2 `t3.micro` + Docker** | The Free Tier fallback if no credits are available: 750 hours a month for twelve months. Rejected as primary because TLS, restarts and deploys all become manual. |
-| **AWS Lambda** | Rejected — the review service is a long-lived server process that keeps the model loaded, not a request-scoped function. |
-| **Elastic Beanstalk** | Rejected — an older abstraction over the same EC2 machinery, with more configuration than App Runner for the same result. |
+| **App Runner** | The original choice. No longer accepts new customers since 30 April 2026; AWS points to ECS Express Mode. |
+| **ECS Fargate + ALB configured by hand** | The same runtime as Express Mode, with a day of networking setup. Express Mode builds it with sensible defaults. |
+| **EC2 `t3.micro` + Docker** | Cheaper, but TLS, restarts and deploys all become manual. |
+| **AWS Lambda** | Rejected - the review service is a long-lived server process, not a request-scoped function. |
+| **Amplify** | Rejected - the screens are served by the same container, so a separate frontend host would split one deployment into two. |
 
-**Known constraints, both handled**
+**Known constraints, all handled**
 
-- **App Runner is not Free Tier.** Expect roughly $5–25 per month while running. If the team has no credits, the EC2 `t3.micro` route above is the fallback, and the service is stopped once evaluation is over.
-- **The container filesystem is ephemeral.** SQLite resets on every restart, so demo data is seeded at startup and a cold container is immediately demonstrable rather than empty. Migrating to RDS PostgreSQL (`db.t4g.micro`, Free Tier eligible) is the roadmap item that removes this.
+- **Cost.** The load balancer costs about $16 a month on its own, plus the running task. A budget alert is set, and the service is deleted once evaluation is over.
+- **The task's storage is ephemeral.** SQLite resets on every deploy, so demo reviews are seeded at startup. Maximum tasks is fixed at 1, because each task would otherwise keep its own database. Migrating to RDS PostgreSQL is the roadmap item that removes both constraints.
+- **A missing permission in AWS's managed policy.** The infrastructure role could not provision the load balancer without `ec2:DescribeAccountAttributes`; a read-only inline policy adds it (`docs/DEPLOYMENT.md`, section 3.6).
 
 Naming these limits explicitly is better than discovering one on stage.
 
 ### 11.6 Health, readiness and rollback
 
-- **Health check:** the Dockerfile `HEALTHCHECK` polls `GET /health`; the host will not route traffic to an unhealthy container.
+- **Health check:** the load balancer polls `GET /health` every 30 seconds; a task needs 5 passes before it receives traffic. The Dockerfile `HEALTHCHECK` also checks inside the container.
+- **Deployments:** canary (5% of traffic for 3 minutes) with a circuit breaker that rolls back, so a failing version does not replace a working one.
+- **Manual rollback:** point the service at an earlier image tag with `aws ecs update-express-gateway-service`.
