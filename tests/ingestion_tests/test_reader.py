@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.ingestion.reader import (
+from extraction.reader import (
     EmptyCSVError,
     InvalidCSVFormatError,
     read_csv_safely,

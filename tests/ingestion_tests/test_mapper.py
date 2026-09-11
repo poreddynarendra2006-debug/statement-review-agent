@@ -2,7 +2,7 @@
 
 import unittest
 
-from src.ingestion.mapper import SemanticColumnMapper
+from extraction.mapper import SemanticColumnMapper
 
 
 class TestSemanticColumnMapper(unittest.TestCase):

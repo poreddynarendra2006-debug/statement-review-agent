@@ -6,13 +6,15 @@ import tempfile
 import unittest
 from pathlib import Path
 
+SAMPLES = Path("data/samples") if Path("data/samples").exists() else Path("data")
+
 import numpy as np
 import pandas as pd
 
-from src.ingestion.config import IngestionConfig
-from src.ingestion.mapper import SemanticColumnMapper
-from src.ingestion.pipeline import FinancialRecord, IngestionPipeline, ingest_financial_statement
-from src.ingestion.schema import (
+from extraction.config import IngestionConfig
+from extraction.mapper import SemanticColumnMapper
+from extraction.pipeline import FinancialRecord, IngestionPipeline, ingest_financial_statement
+from extraction.schema import (
     CANONICAL_COLUMNS,
     is_amount_to_ratio_violation,
 )
@@ -22,9 +24,9 @@ class TestMappingCorrectness(unittest.TestCase):
     """Verifies that columns are mapped accurately without misattribution or silent overwrite."""
 
     def setUp(self):
-        self.clean_csv_path = Path("data/samples/dummy_statements_clean.csv")
-        self.defective_csv_path = Path("data/samples/dummy_statements_defective.csv")
-        self.kaggle_csv_path = Path("data/samples/kaggle_financial_statements.csv")
+        self.clean_csv_path = (SAMPLES / "dummy_statements_clean.csv")
+        self.defective_csv_path = (SAMPLES / "dummy_statements_defective.csv")
+        self.kaggle_csv_path = (SAMPLES / "kaggle_financial_statements.csv")
 
     def test_dummy_mapping_total_assets_equals_raw(self):
         """On dummy file, total_assets equals raw 'Total Assets' values exactly."""
@@ -123,8 +125,8 @@ class TestSchemaCoverageAndValidation(unittest.TestCase):
     """Verifies complete 37 canonical fields support and strict required fields validation."""
 
     def setUp(self):
-        self.clean_csv_path = Path("data/samples/dummy_statements_clean.csv")
-        self.kaggle_csv_path = Path("data/samples/kaggle_financial_statements.csv")
+        self.clean_csv_path = (SAMPLES / "dummy_statements_clean.csv")
+        self.kaggle_csv_path = (SAMPLES / "kaggle_financial_statements.csv")
 
     def test_canonical_schema_has_exactly_37_fields(self):
         """CANONICAL_COLUMNS defines exactly 37 fields (23 Kaggle + 14 Statement)."""
@@ -206,8 +208,8 @@ class TestValuesPreservation(unittest.TestCase):
     """Verifies that data cleaning never alters or recalculates values."""
 
     def setUp(self):
-        self.defective_csv_path = Path("data/samples/dummy_statements_defective.csv")
-        self.kaggle_csv_path = Path("data/samples/kaggle_financial_statements.csv")
+        self.defective_csv_path = (SAMPLES / "dummy_statements_defective.csv")
+        self.kaggle_csv_path = (SAMPLES / "kaggle_financial_statements.csv")
 
     def test_defective_file_values_faithful_and_unaltered(self):
         """Every mapped value in the defective file matches raw value without modification."""
@@ -253,8 +255,8 @@ class TestRecordsInterface(unittest.TestCase):
     """Verifies IngestionResult.to_records() data contracts for downstream agents."""
 
     def setUp(self):
-        self.clean_csv_path = Path("data/samples/dummy_statements_clean.csv")
-        self.kaggle_csv_path = Path("data/samples/kaggle_financial_statements.csv")
+        self.clean_csv_path = (SAMPLES / "dummy_statements_clean.csv")
+        self.kaggle_csv_path = (SAMPLES / "kaggle_financial_statements.csv")
 
     def test_to_records_counts(self):
         """to_records() returns 161 records for Kaggle and 480 for dummy file."""
@@ -303,7 +305,11 @@ class TestPackageImportability(unittest.TestCase):
 
     def test_subprocess_import_from_temp_directory(self):
         """Package imports successfully from an arbitrary working directory."""
-        repo_src = str(Path(__file__).resolve().parent.parent / "src")
+        here = Path(__file__).resolve().parent
+        if (here.parent / "src" / "ingestion").exists():
+            repo_src, package = str(here.parent / "src"), "ingestion"
+        else:
+            repo_src, package = str(here.parent.parent), "extraction"
         with tempfile.TemporaryDirectory() as temp_dir:
             cmd = [
                 sys.executable,
@@ -311,8 +317,8 @@ class TestPackageImportability(unittest.TestCase):
                 (
                     "import sys; "
                     f"sys.path.insert(0, r'{repo_src}'); "
-                    "import ingestion; "
-                    "from ingestion import IngestionConfig, IngestionResult, FinancialRecord, ingest_financial_statement; "
+                    f"import {package}; "
+                    f"from {package} import IngestionConfig, IngestionResult, FinancialRecord, ingest_financial_statement; "
                     "print('IMPORT_SUCCESS')"
                 ),
             ]

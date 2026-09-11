@@ -4,8 +4,8 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from src.ingestion.cleaner import DataCleaner, parse_numeric_value, parse_year_value
-from src.ingestion.schema import CANONICAL_COLUMNS
+from extraction.cleaner import DataCleaner, parse_numeric_value, parse_year_value
+from extraction.schema import CANONICAL_COLUMNS
 
 
 class TestCleaner(unittest.TestCase):

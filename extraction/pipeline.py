@@ -84,6 +84,8 @@ class FinancialRecord:
     extra_fields: Dict[str, Any] = field(default_factory=dict)
 
     def __getattr__(self, name: str) -> Any:
+        if name.startswith("__") or name == "extra_fields":
+            raise AttributeError(name)  # lets copy and pickle work
         if name in CANONICAL_COLUMNS:
             return None
         if name in self.extra_fields:

@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from src.ingestion.validator import DataValidator
+from extraction.validator import DataValidator
 
 
 class TestValidator(unittest.TestCase):
