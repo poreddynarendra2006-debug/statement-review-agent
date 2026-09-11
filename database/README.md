@@ -1,19 +1,17 @@
 # `database/`
 
-**Owner:** Risk, Reporting & DevOps (Member 8)
+**Owner:** Risk & Reporting
 
-Stores users, reviews, findings and reviewer actions.
+Saved reviews, reviewer actions and monitoring. The app uses `database.database` and `database.monitoring`.
 
-## Files that belong here
+## Upload exactly these files
 
-| File | What it does |
-|:--|:--|
-| `database.py` | SQLite schema and all read/write helpers. |
+`__init__.py`, `database.py`, `monitoring.py`
 
-## Contract
+Nothing outside this folder writes SQL; everything goes through these functions.
 
-Nothing outside this folder may write SQL. Go through these functions.
+## Never upload
 
----
+any `.db` file, `__pycache__/`
 
-*Delete this README once the folder has real files in it.*
+Tests go in `tests/risk_tests/`.

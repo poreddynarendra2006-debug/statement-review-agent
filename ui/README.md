@@ -1,25 +1,16 @@
 # `ui/`
 
-**Owner:** Frontend (Member 7)
+**Owner:** Frontend
 
-The seven screens a reviewer actually uses.
+The reviewer's screens. The app serves this folder from `/` on the same address as the API.
 
-## Files that belong here
+## Upload
 
-| File | What it does |
-|:--|:--|
-| `login.py` | Sign in. |
-| `upload.py` | File upload and demo cases. |
-| `dashboard.py` | Risk score, summary, trend charts, run latency. |
-| `findings.py` | Finding list, severity filter, human-in-the-loop controls. |
-| `trends.py` | Multi-year comparison. |
-| `risk_view.py` | Risk point attribution. |
-| `chatbot.py` | Ask-a-question screen. |
+- `index.html` - the first page
+- your other `.html` pages, and your CSS, JavaScript and image files or folders
 
-## Contract
+Call the API with relative paths such as `fetch("/review/upload")`, never `http://localhost:8000`. Uploads accept `.csv` and `.xlsx` only. Exact request and response fields are at `/docs` when the app runs.
 
-Consumes `AnalysisResult` only. Build against a hardcoded fixture until real data flows.
+## Never upload
 
----
-
-*Delete this README once the folder has real files in it.*
+`node_modules/`, build output folders, `.env`, `README.md`

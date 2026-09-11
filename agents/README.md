@@ -1,22 +1,21 @@
 # `agents/`
 
-**Owner:** Orchestration (Member 1), Evidence & Review (Member 6)
+**Owners:** Orchestration & API, Evidence & Review
 
-Runs the pipeline, and turns verified figures into readable review comments.
-
-## Files that belong here
-
-| File | What it does |
+| File | Owner |
 |:--|:--|
-| `orchestrator.py` | Member 1 — sequences every stage, assembles AnalysisResult, records timings. |
-| `evidence_agent.py` | Member 6 — collects verified figures into the evidence packet. |
-| `review_agent.py` | Member 6 — calls the AI provider and writes the narrative. |
-| `prompts.py` | Member 6 — all prompt templates live here, nowhere else. |
+| `__init__.py`, `orchestrator.py`, `planner.py`, `guardrails.py`, `timing.py` | Orchestration & API - never replace these |
+| `evidence_agent.py` | Evidence & Review - `compile_all_findings(result)` returns the list of findings |
+| `review_agent.py` | Evidence & Review - `write_review(result)` returns the summary text |
 
-## Contract
+Both Evidence & Review functions receive the whole review result: `result.failed_validations`, `result.material_deviations`, `result.anomalies`, `result.screened_documents`, `result.security_flags`, and so on. `write_review` can also return `(text, mode)`, where `mode` is `"model"` or `"heuristic"`.
 
-`AnalysisResult` — the single object the UI and the API both consume.
+## Evidence & Review: upload only
 
----
+`evidence_agent.py`, `review_agent.py`, and any helper module of yours with a name that doesn't already exist here (for example `prompts.py`). **Never upload an `__init__.py` into this folder.**
 
-*Delete this README once the folder has real files in it.*
+## Never upload
+
+trained model files or checkpoint folders (`.bin`, `.safetensors`, `.pt`) - GitHub rejects files over 100 MB; share a link instead. Also `__pycache__/`.
+
+Tests go in `tests/evidence_review/`.

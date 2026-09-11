@@ -1,19 +1,15 @@
 # `reports/`
 
-**Owner:** Risk, Reporting & DevOps (Member 8)
+**Owner:** Risk & Reporting
 
-Generates the downloadable PDF audit report.
+The downloadable PDF review report. Takes a saved review, returns PDF bytes.
 
-## Files that belong here
+## Upload exactly these files
 
-| File | What it does |
-|:--|:--|
-| `report_generator.py` | Builds the PDF: tables, evidence boxes, sign-off lines. |
+`__init__.py`, `report_generator.py`
 
-## Contract
+## Never upload
 
-Takes `AnalysisResult`, returns PDF bytes.
+sample PDFs, `__pycache__/`
 
----
-
-*Delete this README once the folder has real files in it.*
+Tests go in `tests/risk_tests/`.

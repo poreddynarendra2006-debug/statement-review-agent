@@ -1,24 +1,12 @@
 # `analysis/`
 
-**Owner:** Validation (Member 3), Trend (Member 4), Anomaly (Member 5), Risk (Member 8)
+**Owners:** Trend (its files below), Orchestration & API (`anomaly_detection.py`)
 
-All the calculations. No AI model may be imported into this folder except the anomaly model.
-
-## Files that belong here
-
-| File | What it does |
+| File | Owner |
 |:--|:--|
-| `validation.py` | Member 3 — the five accounting checks. Emits ValidationResult. |
-| `yoy_analysis.py` | Member 4 — year-on-year movement. Emits YoYResult. |
-| `ratios.py` | Member 4 — liquidity, leverage, profitability, returns. |
-| `anomaly_detection.py` | Member 5 — contradictions and the trained outlier model. Emits AnomalyFinding. |
-| `recurring_issues.py` | Member 5 — problems repeating across years. |
-| `risk_scoring.py` | Member 8 — the explainable 0-100 score. |
+| `__init__.py`, `trend.py`, `yoy_analysis.py`, `ratio_analysis.py`, `forecasting.py`, `deviation_analysis.py`, `data_mapping.py`, `trend_agent.py`, `visualization.py` | Trend - the app calls `run_trend_analysis` from `trend.py` |
+| `anomaly_detection.py` | Orchestration & API - connects the Anomaly agent in `finsight/` to the app |
 
-## Contract
+Trend's settings live in `config/`. Trend's tests live in `tests/trend/`.
 
-`ValidationResult`, `YoYResult`, `AnomalyFinding` — three separate owners share this folder, so keep to your own files.
-
----
-
-*Delete this README once the folder has real files in it.*
+Only change your own files in this folder. Anomaly's code goes in `finsight/`, and Validation's in `validation_agent/` - not here.
