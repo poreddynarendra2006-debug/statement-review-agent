@@ -33,27 +33,29 @@ INJECTION_PATTERNS: Dict[str, Pattern[str]] = {
     "override_instruction": re.compile(
         r"\b(ignore|disregard|forget|override)\b[^.\n]{0,40}\b"
         r"(previous|prior|above|earlier|all|your)\b[^.\n]{0,20}"
-        r"\b(instruction|prompt|rule|direction|context)",
+        r"\b(instruction|prompt|rule|direction|context)s?\b[^.\n]*",
         re.IGNORECASE,
     ),
     "role_reassignment": re.compile(
         r"\b(you are now|act as|pretend to be|from now on you|"
-        r"your new (role|task|instruction))\b",
+        r"your new (role|task|instruction))\b[^.\n]*",
         re.IGNORECASE,
     ),
     "system_prompt_probe": re.compile(
         r"\b(system prompt|developer message|reveal your|"
-        r"print your (instruction|prompt)|what are your instructions)\b",
+        r"print your (instruction|prompt)|what are your instructions)\b[^.\n]*",
         re.IGNORECASE,
     ),
     "output_forcing": re.compile(
         r"\b(respond only with|output exactly|say exactly|reply with only|"
-        r"return the following verbatim)\b",
+        r"return the following verbatim)\b[^.\n]*",
         re.IGNORECASE,
     ),
     "finding_suppression": re.compile(
         r"\b(report no (issues|findings|problems)|mark (this|everything) as "
-        r"(clean|verified|passed)|do not (report|flag|mention))\b",
+        r"(clean|verified|passed)|do not (report|flag|mention)|"
+        r"(report|say|state|conclude) that [^.\n]{0,40}\bno\b[^.\n]{0,20}"
+        r"\b(issues|findings|problems|risks?))\b[^.\n]*",
         re.IGNORECASE,
     ),
     "delimiter_forgery": re.compile(
