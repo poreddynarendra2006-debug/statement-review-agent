@@ -1,6 +1,6 @@
 # Deployment Runbook
 
-FinSight AI · Team 33 · **Owner: Orchestration & API (Member 1)**
+AuditLens · Team 33 · **Owner: Orchestration & API (Member 1)**
 
 Everything needed to take the application from a laptop to a public URL on AWS, and to survive demo day.
 
@@ -48,7 +48,7 @@ Do this once, early. It is the part that always takes longer than expected.
 
 ```bash
 aws ecr create-repository \
-  --repository-name finsight-ai \
+  --repository-name statement-review \
   --region ap-south-1
 ```
 
@@ -58,7 +58,7 @@ Note the returned `repositoryUri` — CI needs it.
 
 ```bash
 aws secretsmanager create-secret \
-  --name finsight/gemini-api-key \
+  --name auditlens/gemini-api-key \
   --secret-string "YOUR_KEY_HERE" \
   --region ap-south-1
 ```
@@ -66,7 +66,7 @@ aws secretsmanager create-secret \
 ### 3.3 Create the S3 bucket for reports
 
 ```bash
-aws s3 mb s3://finsight-reports-team33 --region ap-south-1
+aws s3 mb s3://auditlens-reports-team33 --region ap-south-1
 ```
 
 ### 3.4 Let GitHub deploy without stored keys
@@ -108,9 +108,9 @@ Push to `main`. The workflow runs tests, builds the image, pushes to ECR, and te
 aws ecr get-login-password --region ap-south-1 \
   | docker login --username AWS --password-stdin <account>.dkr.ecr.ap-south-1.amazonaws.com
 
-docker build -t finsight-ai .
-docker tag finsight-ai:latest <account>.dkr.ecr.ap-south-1.amazonaws.com/finsight-ai:latest
-docker push <account>.dkr.ecr.ap-south-1.amazonaws.com/finsight-ai:latest
+docker build -t auditlens .
+docker tag auditlens:latest <account>.dkr.ecr.ap-south-1.amazonaws.com/statement-review:latest
+docker push <account>.dkr.ecr.ap-south-1.amazonaws.com/statement-review:latest
 
 aws apprunner start-deployment --service-arn <service-arn> --region ap-south-1
 ```
@@ -118,8 +118,8 @@ aws apprunner start-deployment --service-arn <service-arn> --region ap-south-1
 ### Locally, to check the image before pushing
 
 ```bash
-docker build -t finsight-ai .
-docker run -p 8000:8000 --env-file .env finsight-ai
+docker build -t auditlens .
+docker run -p 8000:8000 --env-file .env auditlens
 ```
 
 Always run the image locally before pushing. A container that works on your machine and fails in App Runner is almost always a missing environment variable, and that is much faster to find locally.

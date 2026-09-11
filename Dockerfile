@@ -1,11 +1,11 @@
-# FinSight AI - one container, one process, one port.
+# AuditLens - one container, one process, one port.
 #
 # FastAPI serves the review API and, once the front end is in ui/, the
 # reviewer's screens from the same port. Every container host we might deploy
 # to routes a single port, and there is no second server to keep in step.
 #
-# Build:  docker build -t finsight-ai .
-# Run:    docker run -p 8000:8000 --env-file .env finsight-ai
+# Build:  docker build -t auditlens .
+# Run:    docker run -p 8000:8000 --env-file .env auditlens
 #
 # No API key is required.
 

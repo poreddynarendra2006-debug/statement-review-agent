@@ -54,7 +54,7 @@ upload the two JSONL files, and run it top to bottom. Around 15-25 minutes.
 
 **3. Bring the model back**
 
-Download `finsight-reviewer-final.zip` and unzip it into `models/reviewer/`.
+Download `auditlens-reviewer-final.zip` and unzip it into `models/reviewer/`.
 
 **Do not commit the weights** - they are about 1 GB. `.gitignore` excludes
 `models/`. Put them in S3 and let the Docker build pull them in, or attach them

@@ -1,4 +1,4 @@
-# FinSight AI
+# AuditLens
 
 **An evidence-driven financial statement review agent.**
 

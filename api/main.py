@@ -93,7 +93,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="FinSight AI - Financial Statement Review",
+    title="AuditLens - Financial Statement Review",
     description=(
         "Reviews financial statements and returns findings with the evidence "
         "behind them.\n\n"
@@ -386,7 +386,7 @@ def review_report(review_id: int,
     return Response(
         content=pdf,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="finsight-review-{review_id}.pdf"'},
+        headers={"Content-Disposition": f'attachment; filename="auditlens-review-{review_id}.pdf"'},
     )
 
 
@@ -478,7 +478,7 @@ if not mount_frontend(app, UI_DIR):
     def root() -> Dict[str, Any]:
         """Until the front end is added, point a browser somewhere useful."""
         return {
-            "service": "FinSight AI - Financial Statement Review",
+            "service": "AuditLens - Financial Statement Review",
             "version": VERSION,
             "docs": "/docs",
             "health": "/health",

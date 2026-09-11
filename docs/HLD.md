@@ -1,4 +1,4 @@
-# High Level Design — FinSight AI
+# High Level Design — AuditLens
 
 **Financial Statement Review Agent**
 Cognizant NPN AI & Analytics 2027 · Use case #2 · Team 33
@@ -13,7 +13,7 @@ Cognizant NPN AI & Analytics 2027 · Use case #2 · Team 33
 
 ## 1. Purpose and scope
 
-This document describes the architecture of FinSight AI: what the system does, how it is decomposed, what crosses each boundary, and which alternatives were considered and rejected.
+This document describes the architecture of AuditLens: what the system does, how it is decomposed, what crosses each boundary, and which alternatives were considered and rejected.
 
 **In scope:** ingestion of financial statements, deterministic validation, trend and anomaly analysis, AI-generated review observations, risk scoring, reporting, and deployment.
 

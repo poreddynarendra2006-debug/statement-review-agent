@@ -189,7 +189,7 @@ def test_root_points_somewhere_useful_until_the_front_end_exists(client):
 
 
 def test_front_end_is_served_when_present(tmp_path):
-    (tmp_path / "index.html").write_text("<h1>FinSight sign in</h1>", encoding="utf-8")
+    (tmp_path / "index.html").write_text("<h1>AuditLens sign in</h1>", encoding="utf-8")
     (tmp_path / "dashboard.html").write_text("<h1>Dashboard</h1>", encoding="utf-8")
     site = FastAPI()
 
@@ -199,7 +199,7 @@ def test_front_end_is_served_when_present(tmp_path):
 
     assert mount_frontend(site, tmp_path) is True
     web = TestClient(site)
-    assert "FinSight sign in" in web.get("/").text
+    assert "AuditLens sign in" in web.get("/").text
     assert "Dashboard" in web.get("/dashboard.html").text
     assert web.get("/health").json() == {"status": "ok"}, "API routes must win over static files"
 
@@ -450,7 +450,7 @@ def test_pdf_report_download(client, payload, reporting):
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/pdf"
     assert response.content.startswith(b"%PDF")
-    assert f"finsight-review-{review_id}.pdf" in response.headers["content-disposition"]
+    assert f"auditlens-review-{review_id}.pdf" in response.headers["content-disposition"]
     result, reviewer = reporting.report.received
     assert result["company"] == "Acme Corporation", "the full stored result must reach the generator"
     assert reviewer == "Reviewer"
