@@ -324,6 +324,28 @@ class FakeFindingItem:
 
 
 @pytest.fixture
+def excel_bytes():
+    """Build an .xlsx in memory: rows for the first sheet, plus optional named sheets."""
+    import io
+
+    from openpyxl import Workbook
+
+    def build(*rows, sheets=None):
+        book = Workbook()
+        for row in rows:
+            book.active.append(list(row))
+        for title, sheet_rows in (sheets or {}).items():
+            sheet = book.create_sheet(title)
+            for row in sheet_rows:
+                sheet.append(list(row))
+        buffer = io.BytesIO()
+        book.save(buffer)
+        return buffer.getvalue()
+
+    return build
+
+
+@pytest.fixture
 def financial_records() -> List[FakeFinancialRecord]:
     """Four years for one company, with full statement detail.
 

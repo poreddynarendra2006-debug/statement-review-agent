@@ -32,7 +32,7 @@ VERSION = "0.2.0"
 #: this stops an accidental multi-gigabyte upload exhausting container memory.
 MAX_UPLOAD_BYTES = int(float(os.environ.get("MAX_UPLOAD_MB", "10")) * 1024 * 1024)
 
-ALLOWED_UPLOAD_SUFFIXES: Tuple[str, ...] = (".csv", ".xlsx", ".xls")
+ALLOWED_UPLOAD_SUFFIXES: Tuple[str, ...] = (".csv", ".xlsx")
 
 #: Where the reviewer's screens live. Served from / when index.html exists.
 UI_DIR = os.environ.get("UI_DIR") or str(Path(__file__).resolve().parent.parent / "ui")

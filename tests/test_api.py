@@ -360,6 +360,63 @@ def test_upload_with_no_records_is_rejected(client):
     assert upload(client).status_code == 422
 
 
+def test_excel_upload_reaches_ingestion_as_csv(client, excel_bytes):
+    fake = FakeIngestion()
+    use(get_ingestion, fake)
+    use(get_orchestrator, ReviewOrchestrator())
+    workbook = excel_bytes(("Acme Corporation - annual figures (USD m)",), (),
+                           ("Year", "Company", "Revenue"), (2022, "Acme", 670), (2023, "Acme", 780))
+
+    response = upload(client, content=workbook, name="annual.xlsx")
+
+    assert response.status_code == 200, response.text
+    assert Path(fake.seen_path).suffix == ".csv"
+    assert fake.seen_bytes.decode().splitlines()[:2] == ["Year,Company,Revenue", "2022,Acme,670"]
+
+
+def test_excel_without_a_table_is_rejected(client, excel_bytes):
+    use(get_ingestion, FakeIngestion())
+    response = upload(client, content=excel_bytes(("Just a title",)), name="empty.xlsx")
+
+    assert response.status_code == 422
+    assert "no sheet with a table" in response.json()["detail"]
+
+
+def test_a_file_that_is_not_really_excel_is_rejected(client):
+    use(get_ingestion, FakeIngestion())
+    response = upload(client, content=b"Year,Company\n2023,Acme\n", name="renamed.xlsx")
+
+    assert response.status_code == 422
+    assert "could not be opened as an Excel workbook" in response.json()["detail"]
+
+
+def test_old_xls_files_are_turned_away_with_what_to_do(client):
+    use(get_ingestion, FakeIngestion())
+    response = upload(client, name="old.xls")
+
+    assert response.status_code == 415
+    assert ".xlsx or CSV" in response.json()["detail"]
+
+
+def test_errors_name_the_uploaded_file_not_the_temporary_copy(client):
+    def ingest(path):
+        return SimpleNamespace(status="error",
+                               message=f"CSV file '{Path(path).name}' has headers but no data rows.")
+    use(get_ingestion, ingest)
+
+    detail = upload(client, name="q3_results.csv").json()["detail"]
+    assert detail == "CSV file 'q3_results.csv' has headers but no data rows."
+
+
+def test_ingestion_crashes_also_name_the_uploaded_file(client):
+    def ingest(path):
+        raise ValueError(f"could not parse {path}")
+    use(get_ingestion, ingest)
+
+    detail = upload(client, name="q3_results.csv").json()["detail"]
+    assert detail.endswith("could not parse q3_results.csv")
+
+
 # --- history, reports, actions -----------------------------------------
 
 

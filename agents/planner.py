@@ -53,6 +53,11 @@ MIN_COMPANIES_FOR_PEER_ANALYSIS = 5
 MIN_PERIODS_FOR_TREND = 2
 MIN_PERIODS_FOR_RECURRENCE = 3
 
+#: Below this many company-years, "unusual" is learned from the same handful of
+#: rows being judged, so most of them look unusual. Measured on clean data:
+#: 8-16 company-years had 50-88% flagged; from 24 the rate settles at 5-8%.
+MIN_RECORDS_FOR_ANOMALY = 24
+
 
 class Requirement(Enum):
     """What an agent needs before it is worth running."""
@@ -62,6 +67,7 @@ class Requirement(Enum):
     MULTIPLE_PERIODS = "multiple_periods"
     RECURRENCE_WINDOW = "recurrence_window"
     PEER_GROUP = "peer_group"
+    ENOUGH_RECORDS = "enough_records"
 
 
 @dataclass
@@ -177,6 +183,12 @@ class Planner:
             if facts["companies"] < MIN_COMPANIES_FOR_PEER_ANALYSIS:
                 return (f"needs at least {MIN_COMPANIES_FOR_PEER_ANALYSIS} companies "
                         f"for peer comparison, found {facts['companies']}")
+            return None
+
+        if requirement is Requirement.ENOUGH_RECORDS:
+            if facts["records"] < MIN_RECORDS_FOR_ANOMALY:
+                return (f"needs at least {MIN_RECORDS_FOR_ANOMALY} company-years to learn "
+                        f"what normal looks like, found {facts['records']}")
             return None
 
         return None

@@ -180,7 +180,7 @@ class ReviewOrchestrator:
             # missing, and its ratio checks work on data with no balance sheet.
             "validation": Requirement.NONE,
             "trend": Requirement.MULTIPLE_PERIODS,
-            "anomaly": Requirement.NONE,
+            "anomaly": Requirement.ENOUGH_RECORDS,
             "recurring": Requirement.RECURRENCE_WINDOW,
             "peer": Requirement.PEER_GROUP,
         }

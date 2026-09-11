@@ -66,6 +66,7 @@ from .models import (
     ReviewRequest,
     ReviewResponse,
 )
+from .spreadsheets import NoTableFound, excel_to_csv
 
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("api")
@@ -215,6 +216,11 @@ def review(request: ReviewRequest,
                        materiality=request.materiality)
 
 
+def _as_uploaded(message: str, temp_path: str, name: str) -> str:
+    """Ingestion names the temporary copy; the user knows the file by its own name."""
+    return message.replace(temp_path, name).replace(Path(temp_path).name, name)
+
+
 @app.post("/review/upload", response_model=ReviewResponse,
           responses={413: {"model": ErrorResponse}, 415: {"model": ErrorResponse},
                      422: {"model": ErrorResponse}, **UNAVAILABLE},
@@ -233,6 +239,12 @@ async def review_upload(
     """
     name = file.filename or "upload"
     suffix = Path(name).suffix.lower()
+    if suffix == ".xls":
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"'{name}' is an older .xls workbook, which can't be read. "
+                   "Save it as .xlsx or CSV and upload it again.",
+        )
     if suffix not in ALLOWED_UPLOAD_SUFFIXES:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
@@ -259,8 +271,22 @@ async def review_upload(
                    "not installed. Send records as JSON to POST /review instead.",
         )
 
-    # Ingestion reads from a path and detects the format from the extension,
-    # so the upload is written to a temporary file that is always removed.
+    # Ingestion reads CSV only, so a workbook is handed over as the table it holds.
+    if suffix == ".xlsx":
+        try:
+            content = await run_in_threadpool(excel_to_csv, content)
+        except NoTableFound as exc:
+            raise HTTPException(status_code=422,
+                                detail=f"'{name}' has no sheet with a table of column headings "
+                                       "and rows under them.") from exc
+        except Exception as exc:  # noqa: BLE001 - a corrupt or renamed file is the uploader's to fix
+            logger.warning("could not open %s as a workbook: %s", name, exc)
+            raise HTTPException(status_code=422,
+                                detail=f"'{name}' could not be opened as an Excel workbook.") from exc
+        suffix = ".csv"
+
+    # Ingestion reads from a path, so the upload is written to a temporary
+    # file that is always removed.
     fd, path = tempfile.mkstemp(suffix=suffix)
     try:
         with os.fdopen(fd, "wb") as handle:
@@ -269,8 +295,11 @@ async def review_upload(
             ingested = await run_in_threadpool(ingest, path)
         except Exception as exc:  # noqa: BLE001 - report as a bad file, not a server fault
             logger.exception("ingestion failed for %s", name)
-            raise HTTPException(status_code=422,
-                                detail=f"'{name}' could not be read as financial statements: {exc}") from exc
+            raise HTTPException(
+                status_code=422,
+                detail=f"'{name}' could not be read as financial statements: "
+                       f"{_as_uploaded(str(exc), path, name)}",
+            ) from exc
     finally:
         try:
             os.remove(path)
@@ -278,9 +307,10 @@ async def review_upload(
             pass
 
     if getattr(ingested, "status", "success") == "error":
+        message = _as_uploaded(getattr(ingested, "message", "") or "", path, name)
         raise HTTPException(
             status_code=422,
-            detail=getattr(ingested, "message", "") or f"'{name}' does not look like a financial statement file.",
+            detail=message or f"'{name}' does not look like a financial statement file.",
         )
     records = records_from_ingestion(ingested)
     if not records:

@@ -4,6 +4,7 @@ import pytest
 
 from agents.planner import (
     MIN_COMPANIES_FOR_PEER_ANALYSIS,
+    MIN_RECORDS_FOR_ANOMALY,
     Plan,
     Planner,
     Requirement,
@@ -99,6 +100,24 @@ def test_peer_analysis_needs_a_peer_group(planner, financial_records):
     ]
     plan = planner.plan(many)
     assert "peer_anomaly" in plan.selected
+
+
+def test_anomaly_detection_needs_enough_company_years(financial_records):
+    """On a handful of rows, 'unusual' is learned from the very rows being judged."""
+    from dataclasses import replace
+
+    planner = Planner()
+    planner.register("anomaly", lambda r: "scored", requires=Requirement.ENOUGH_RECORDS)
+
+    small = planner.plan(financial_records)
+    assert small.skipped["anomaly"] == (
+        f"needs at least {MIN_RECORDS_FOR_ANOMALY} company-years to learn what normal "
+        f"looks like, found {len(financial_records)}"
+    )
+
+    enough = [replace(financial_records[0], company=f"Company {i}")
+              for i in range(MIN_RECORDS_FOR_ANOMALY)]
+    assert planner.plan(enough).selected == ["anomaly"]
 
 
 def test_empty_submission_skips_everything_with_a_reason(planner):

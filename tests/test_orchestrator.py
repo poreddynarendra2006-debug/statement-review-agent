@@ -7,7 +7,14 @@ valid AnalysisResult rather than an exception.
 
 import pytest
 
+import agents.planner as planner_module
 from agents.orchestrator import AnalysisResult, ReviewOrchestrator
+
+
+@pytest.fixture(autouse=True)
+def small_fixtures_reach_anomaly_detection(monkeypatch):
+    """The fixtures hold four company-years. The real minimum is tested on its own."""
+    monkeypatch.setattr(planner_module, "MIN_RECORDS_FOR_ANOMALY", 1)
 
 
 @pytest.fixture
@@ -63,6 +70,18 @@ def test_timings_cover_every_stage_that_ran(full_orchestrator, financial_records
     for stage in ("validation", "trend", "anomaly", "evidence", "review", "risk"):
         assert stage in result.timings, f"{stage} was not timed"
     assert result.timings["_total"] > 0
+
+
+def test_anomaly_detection_is_skipped_on_too_little_data(full_orchestrator, financial_records,
+                                                         monkeypatch):
+    monkeypatch.setattr(planner_module, "MIN_RECORDS_FOR_ANOMALY", 24)
+    result = full_orchestrator.run(financial_records)
+
+    assert result.anomalies == []
+    assert "anomaly" in result.coverage["skipped"]
+    assert any(w.startswith("anomaly did not run: needs at least 24 company-years")
+               for w in result.warnings)
+    assert result.validation_results, "the checks that need no history still run"
 
 
 # --- degrading gracefully -----------------------------------------------
