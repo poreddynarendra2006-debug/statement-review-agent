@@ -30,7 +30,7 @@ import tempfile
 import textwrap
 import traceback
 import warnings
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -356,6 +356,46 @@ def check_anomaly() -> Tuple[str, str]:
         f"small upload {'skipped' if skip_reason else 'not skipped'}")
 
 
+def check_recurring() -> Tuple[str, str]:
+    detect = _first_available(COMPONENT_ENTRY_POINTS["recurring"])
+    if detect is None:
+        return MISSING, "analysis/recurring_issues.py has no detect_recurring_issues yet"
+
+    note_missing_inputs()
+    planted = defaultdict(set)
+    for defect in json.loads(LABELS.read_text(encoding="utf-8"))["defects"]:
+        planted[(defect["company"], defect["rule_id"])].add(int(defect["year"]))
+    expected = {(company, rule, tuple(sorted(years)))
+                for (company, rule), years in planted.items() if len(years) >= 3}
+
+    issues = full_review("defective").recurring_issues
+    found = {(get(i, "company"), get(i, "key"), tuple(get(i, "years") or []))
+             for i in issues if get(i, "source") == "validation"}
+    by_source = Counter(get(i, "source") for i in issues)
+
+    line(f"Input: full review of {DEFECTIVE.name}. The answer key plants the same error for the same "
+         f"company in 3 or more years {len(expected)} times:")
+    for company, rule, years in sorted(expected):
+        line(f"  {company} {rule} {list(years)}  ->  {'found' if (company, rule, years) in found else 'MISSED'}")
+    extra = found - expected
+    for company, rule, years in sorted(extra)[:3]:
+        line(f"  EXTRA: {company} {rule} {list(years)}")
+    line(f"Recurring issues reported: {len(issues)} (failed checks {by_source['validation']}, "
+         f"anomalies {by_source['anomaly']}, trend deviations {by_source['trend']})")
+    for issue in issues[:5]:
+        line(f"  [{get(issue, 'severity')}] {get(issue, 'company')}: {short(get(issue, 'issue'), 120)}")
+
+    two_years = [r for r in load_records(DEFECTIVE) if year_of(r) in (2016, 2017)]
+    reason = (orchestrator().run(two_years).coverage.get("skipped") or {}).get("recurring")
+    line(f"Upload with only 2 years: recurring "
+         f"{'skipped - ' + reason if reason else 'RAN (should be skipped: needs 3 years)'}")
+
+    ok = found == expected and bool(reason)
+    return (PASS if ok else CHECK), (
+        f"{len(found & expected)}/{len(expected)} planted recurring errors found, {len(extra)} extra, "
+        f"2-year upload {'skipped' if reason else 'not skipped'}")
+
+
 def check_evidence() -> Tuple[str, str]:
     if orchestrator()._evidence is None:
         return MISSING, "agents/evidence_agent.py has no compile_all_findings yet"
@@ -507,10 +547,11 @@ CHECKS: Dict[str, Tuple[str, Callable[[], Tuple[str, str]]]] = {
     "validation": ("2. Validation", check_validation),
     "trend": ("3. Trend", check_trend),
     "anomaly": ("4. Anomaly", check_anomaly),
-    "evidence": ("5. Evidence", check_evidence),
-    "review": ("6. Review (AI summary + guardrail)", check_review),
-    "risk": ("7. Risk scoring", check_risk),
-    "reporting": ("8. Reporting (history, PDF, monitoring)", check_reporting),
+    "recurring": ("5. Recurring issues", check_recurring),
+    "evidence": ("6. Evidence", check_evidence),
+    "review": ("7. Review (AI summary + guardrail)", check_review),
+    "risk": ("8. Risk scoring", check_risk),
+    "reporting": ("9. Reporting (history, PDF, monitoring)", check_reporting),
 }
 
 

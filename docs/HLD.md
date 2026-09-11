@@ -95,7 +95,7 @@ The defining structural feature is the **LLM boundary**. All computation happens
 | C2 | **Orchestrator** | Sequence the pipeline, assemble `AnalysisResult`, expose the REST interface, record run duration | Orchestration & API |
 | C3 | **Validation Agent** | Five deterministic accounting identities, graded against a configurable materiality threshold | Validation Agent |
 | C4 | **Trend Agent** | Year-on-year movement per line item; liquidity, leverage, profitability and return ratios | Trend Agent |
-| C5 | **Anomaly Agent** | Cross-figure contradictions, multi-year recurring issues, and an unsupervised peer-outlier model | Anomaly Agent |
+| C5 | **Anomaly Agent** | Cross-figure contradictions and an unsupervised peer-outlier model. Multi-year recurring issues are found separately by `analysis/recurring_issues.py` (Orchestration & API) | Anomaly Agent |
 | C6 | **Evidence Agent** | Assemble the verified evidence packet; enforce that nothing unverified reaches the model | Evidence & Review |
 | C7 | **Review Agent** | Generate executive summary, per-finding commentary and recommended actions | Evidence & Review |
 | C8 | **Risk Scorer** | Explainable 0–100 score with per-finding point attribution | Risk & Reporting |
