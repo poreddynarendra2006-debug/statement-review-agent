@@ -237,6 +237,7 @@ def check_validation() -> Tuple[str, str]:
     if validate is None:
         return MISSING, "validation_agent/ has no run_all_validations yet"
 
+    note_missing_inputs()
     planted = [(d["company"], int(d["year"]), d["rule_id"])
                for d in json.loads(LABELS.read_text(encoding="utf-8"))["defects"]]
     results = list(validate(load_records(DEFECTIVE)))
