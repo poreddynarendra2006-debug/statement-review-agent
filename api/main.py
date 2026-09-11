@@ -45,6 +45,7 @@ from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
@@ -102,6 +103,9 @@ app = FastAPI(
     ),
     version=VERSION,
     docs_url="/docs",
+    # A full review is several MB of JSON. With highlighting on, the docs page
+    # can't render a response that size and shows "Could not render responses".
+    swagger_ui_parameters={"syntaxHighlight": False},
     lifespan=lifespan,
 )
 
@@ -113,6 +117,10 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+# Review JSON compresses to about a tenth of its size, which is what makes a
+# multi-MB review quick to load over a real network.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 app.include_router(auth_router)
 
