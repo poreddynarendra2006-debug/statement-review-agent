@@ -202,6 +202,20 @@ def test_a_review_reports_the_companies_it_covers_and_when_it_ran(client, payloa
     assert body["filename"] == "", "records sent as JSON came from no file"
 
 
+def test_the_review_list_names_the_file_and_its_id(client, tmp_path):
+    # The recent-reviews table shows both. Before this, every row read
+    # "Financial_Statement" with an empty id, and Open and PDF did nothing.
+    upload = tmp_path / "Q3_Statements.csv"
+    upload.write_text("Company,Year,Revenue,Net Income\nAcme Corporation,2023,780,128\n", encoding="utf-8")
+    with upload.open("rb") as handle:
+        posted = client.post("/review/upload", files={"file": (upload.name, handle, "text/csv")})
+
+    listed = client.get("/reviews").json()[0]
+
+    assert listed["filename"] == "Q3_Statements.csv"
+    assert listed["review_id"] == listed["id"] == posted.json()["review_id"]
+
+
 def test_root_serves_the_reviewers_first_screen(client):
     # The front end is in ui/, so / is its sign-in page rather than the JSON
     # fallback. The fallback itself is covered by the mount tests below.

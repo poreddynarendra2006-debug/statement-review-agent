@@ -368,7 +368,12 @@ async def review_upload(
 def list_reviews(limit: int = Query(20, ge=1, le=200),
                  reporting: Reporting = Depends(require_reporting)) -> List[Dict[str, Any]]:
     """Recent saved reviews, newest first."""
-    return reporting.database.list_reviews(limit=limit)
+    reviews = reporting.database.list_reviews(limit=limit)
+    for review in reviews:
+        # The table calls it `id`; every other endpoint and the front end call
+        # it `review_id`. Both are returned so neither has to know the other.
+        review.setdefault("review_id", review.get("id"))
+    return reviews
 
 
 @app.get("/reviews/{review_id}", dependencies=SIGNED_IN, responses={404: {"model": ErrorResponse}, **UNAVAILABLE},

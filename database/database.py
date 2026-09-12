@@ -37,6 +37,7 @@ def init_db() -> None:
             elapsed_seconds REAL,
             findings_count INTEGER NOT NULL,
             failed_checks_count INTEGER NOT NULL,
+            filename TEXT,
             result_json TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS reviewer_actions (
@@ -59,6 +60,19 @@ def init_db() -> None:
             UNIQUE(review_id, stage)
         );
         """)
+        _add_missing_columns(conn)
+
+
+def _add_missing_columns(conn: sqlite3.Connection) -> None:
+    """Bring an older database up to the current columns.
+
+    A database created before a column existed is not recreated by
+    CREATE TABLE IF NOT EXISTS, so the column is added here instead. Without
+    it, a deployment that kept its file would fail every insert.
+    """
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(reviews)")}
+    if "filename" not in existing:
+        conn.execute("ALTER TABLE reviews ADD COLUMN filename TEXT")
 
 
 def _now() -> str:
@@ -76,12 +90,14 @@ def save_review(result: dict) -> int:
         cur = conn.execute(
             """INSERT INTO reviews
             (created_at, company, period, record_count, risk_score, risk_level,
-             review_mode, elapsed_seconds, findings_count, failed_checks_count, result_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+             review_mode, elapsed_seconds, findings_count, failed_checks_count,
+             filename, result_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (created_at, result.get("company", ""), result.get("period"),
              result.get("record_count"), risk.get("score", result.get("risk_score")),
              risk.get("risk_level"), result.get("review_mode"), result.get("elapsed_seconds"),
-             len(result.get("findings") or []), len(result.get("failed_validations") or []), payload),
+             len(result.get("findings") or []), len(result.get("failed_validations") or []),
+             result.get("filename") or "", payload),
         )
         review_id = int(cur.lastrowid)
         for stage, seconds in timings.items():
@@ -112,7 +128,7 @@ def list_reviews(limit: int = 50) -> list[dict[str, Any]]:
         rows = conn.execute(
             """SELECT id, created_at, company, period, record_count, risk_score,
                       risk_level, review_mode, elapsed_seconds, findings_count,
-                      failed_checks_count
+                      failed_checks_count, filename
                FROM reviews ORDER BY id DESC LIMIT ?""", (max(0, int(limit)),)
         ).fetchall()
     return [dict(row) for row in rows]

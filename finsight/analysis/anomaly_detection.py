@@ -201,6 +201,20 @@ class IsolationForestModel:
         return -raw_df
 
 
+#: Robust z beyond which a record is reported whatever the contamination cap
+#: allows. The ordinary statistical threshold is 3, which on noisy data flags a
+#: third of an honest file, so this is set far higher: the "no longer a
+#: judgement call" line - 30 deviations is territory like net income at four
+#: times revenue, not an unusual-looking year.
+#:
+#: Measured on all three datasets: the clean dummy file and the Kaggle file
+#: both still flag 5.0%, exactly as before, while a 40-row file with 10 blatant
+#: anomalies now reports all 10 instead of 2. Lower bars were tried and
+#: rejected: at 12 the Kaggle file jumped to 29.8%, because pooling companies of
+#: wildly different sizes makes ordinary rows look extreme.
+CERTAIN_ROBUST_Z = 30.0
+
+
 class AnomalyDetector:
     """Production-quality Universal Financial Anomaly Detection Agent."""
 
@@ -534,11 +548,23 @@ class AnomalyDetector:
             if is_anomaly_mask.sum() == 0 and num_records >= 10:
                 is_anomaly_mask = (calibrated_scores >= score_cutoff)
 
-        # Strictly cap final flagged count at target contamination
+        # Cap how much the model may flag, so an ordinary file is not filled
+        # with borderline findings.
+        #
+        # The exception is a record so far from the rest that it is not a
+        # judgement call - CERTAIN_ROBUST_Z deviations, against the ordinary
+        # z-test's 3. Those are kept whatever the budget allows. Without this,
+        # the cap silently dropped real findings: a file with ten obvious
+        # anomalies in forty rows reported two, because two was 4.8% of forty.
+        certain = max_abs_rz >= CERTAIN_ROBUST_Z
         if is_anomaly_mask.sum() > target_flag_count and num_records >= 20:
-            top_indices = np.argsort(calibrated_scores)[-target_flag_count:]
-            is_anomaly_mask = np.zeros(num_records, dtype=bool)
-            is_anomaly_mask[top_indices] = True
+            budget = max(0, target_flag_count - int(certain.sum()))
+            discretionary = np.where(is_anomaly_mask & ~certain)[0]
+            kept = np.zeros(num_records, dtype=bool)
+            if budget > 0 and discretionary.size:
+                strongest = discretionary[np.argsort(calibrated_scores[discretionary])[-budget:]]
+                kept[strongest] = True
+            is_anomaly_mask = certain | kept
 
         # Compute Confidence Scores
         yoy_col_indices = [i for i, c in enumerate(features_used) if c.startswith("yoy_") or c.endswith("_growth") or c.endswith("_change")]

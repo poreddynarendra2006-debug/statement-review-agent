@@ -206,7 +206,8 @@ def test_review_endpoints_work_once_signed_in(client, storage):
     response = client.get("/reviews", headers=bearer(token_for(client)))
 
     assert response.status_code == 200
-    assert response.json() == [{"id": 1, "company": "Acme"}]
+    # review_id is added alongside id, for the front end's recent-reviews table.
+    assert response.json() == [{"id": 1, "company": "Acme", "review_id": 1}]
 
 
 def test_actions_are_recorded_under_the_signed_in_account(client, storage):
