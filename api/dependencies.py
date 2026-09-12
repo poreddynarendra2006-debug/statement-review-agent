@@ -13,6 +13,7 @@ answer 503 with a clear message instead of the whole service failing to start.
 from __future__ import annotations
 
 import importlib
+import inspect
 import json
 import logging
 import math
@@ -179,11 +180,21 @@ def risk_adapter(calculate_risk: Callable[..., Any]) -> Callable[[AnalysisResult
     that can carry risk are passed: failed checks, anomalies and material
     deviations.
 
-    Peer findings are deliberately left out. Being unlike one's peers is not a
-    defect - a specialist lender genuinely carries more debt than a software
-    firm - and scoring it as one took clean books from 44 MEDIUM to 82
-    CRITICAL, which would have made the score useless for telling real
-    problems apart. They reach the reviewer as findings instead.
+    Three kinds of finding are deliberately left out, each measured rather than
+    assumed, so that nobody later "fixes" the omission and breaks the score:
+
+    - **Peer comparison.** Being unlike one's peers is not a defect; a
+      specialist lender genuinely carries more debt than a software firm.
+      Including it took clean books from 44 MEDIUM to 82 CRITICAL.
+    - **Ratio health.** The trend agent grades roughly 210 ratios CRITICAL on
+      both our datasets, because a high debt ratio is a characteristic, not an
+      error. Including them took both files to 100 CRITICAL, clean and
+      defective alike, which tells a reviewer nothing.
+    - **Recurring issues.** They are derived from failures already scored here,
+      so counting them again would charge the same problem twice.
+
+    All three still reach the reviewer as findings. The score is for things
+    that are wrong; those are things worth a look.
     """
 
     def score(result: AnalysisResult) -> Any:
@@ -196,12 +207,38 @@ def risk_adapter(calculate_risk: Callable[..., Any]) -> Callable[[AnalysisResult
     return score
 
 
+def validation_adapter(run_all_validations: Callable[..., Any]) -> Callable[..., List[Any]]:
+    """Run the accounting checks, then the data-quality ones.
+
+    The Validation package ships both, but its entry point runs only the
+    accounting formulas, so negative revenue, a duplicated company-year and a
+    blank company name went unreported. They are failures of fact rather than
+    judgement, so they belong in the same list as a failed identity.
+    """
+
+    def validate(records: Sequence[Any], **options: Any) -> List[Any]:
+        results = list(run_all_validations(records, **options) or [])
+        try:
+            from agents import data_quality
+        except Exception:  # noqa: BLE001 - the checks are part of the same package
+            return results
+        return results + data_quality.run_data_quality_checks(records)
+
+    # The planner passes only the options a function accepts, by signature, so
+    # the wrapper must keep the original's.
+    validate.__signature__ = inspect.signature(run_all_validations)
+    return validate
+
+
 def build_orchestrator() -> ReviewOrchestrator:
     """Wire in whichever components are installed."""
     components: Dict[str, Any] = {
         name: _first_available(candidates)
         for name, candidates in COMPONENT_ENTRY_POINTS.items()
     }
+    if components.get("validation") is not None:
+        components["validation"] = validation_adapter(components["validation"])
+
     calculate_risk = _first_available(RISK_ENTRY_POINTS)
     components["risk"] = risk_adapter(calculate_risk) if calculate_risk else None
 
