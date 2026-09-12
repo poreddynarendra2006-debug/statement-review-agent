@@ -161,7 +161,52 @@ def generate_report(result: dict, reviewer_name: str = "") -> bytes:
     else:
         story.append(_empty(styles))
 
-    story += [Paragraph("5. Review coverage", styles["Section"])]
+    # The executive summary counts these two, and the reviewer's screens show
+    # them, but the report had no section for either - so a summary saying "1
+    # recurring issue" was followed by no recurring issue anywhere, and peer
+    # comparison ran without a single line to its name.
+    story += [Paragraph("5. Recurring issues", styles["Section"])]
+    recurring = _v(result, "recurring_issues", []) or []
+    if recurring:
+        headers = ["Company", "Issue", "Years", "Occurrences", "Consecutive", "Severity", "Evidence"]
+        rows = [[_para(h, styles["Cell"]) for h in headers]]
+        for x in recurring:
+            years = x.get("years", []) or []
+            rows.append([
+                _para(x.get("company", ""), styles["Cell"]),
+                _para(x.get("issue", ""), styles["Cell"]),
+                _para(", ".join(str(y) for y in years), styles["Cell"]),
+                _para(x.get("occurrences", ""), styles["Cell"]),
+                _para("yes" if x.get("consecutive") else "no", styles["Cell"]),
+                _para(x.get("severity", ""), styles["Cell"]),
+                _para(x.get("evidence", ""), styles["Cell"]),
+            ])
+        story.append(_table(rows, [26*mm, 30*mm, 24*mm, 17*mm, 17*mm, 17*mm, 29*mm]))
+    else:
+        story.append(_empty(styles))
+
+    story += [Paragraph("6. Peer comparison", styles["Section"])]
+    peers = _v(result, "peer_findings", []) or []
+    if peers:
+        headers = ["Company", "Year", "Metric", "Value", "Peer median", "Middle half", "Peers", "Issue"]
+        rows = [[_para(h, styles["Cell"]) for h in headers]]
+        for x in peers:
+            low, high = x.get("peer_low", ""), x.get("peer_high", "")
+            rows.append([
+                _para(x.get("company", ""), styles["Cell"]),
+                _para(x.get("year", ""), styles["Cell"]),
+                _para(x.get("metric", ""), styles["Cell"]),
+                _para(x.get("value", ""), styles["Cell"]),
+                _para(x.get("peer_median", ""), styles["Cell"]),
+                _para(f"{low} to {high}" if low != "" or high != "" else "", styles["Cell"]),
+                _para(x.get("peer_count", ""), styles["Cell"]),
+                _para(x.get("issue", ""), styles["Cell"]),
+            ])
+        story.append(_table(rows, [24*mm, 11*mm, 24*mm, 17*mm, 19*mm, 24*mm, 12*mm, 29*mm]))
+    else:
+        story.append(_empty(styles))
+
+    story += [Paragraph("7. Review coverage", styles["Section"])]
     coverage = _v(result, "coverage", {}) or {}
     selected = coverage.get("selected", []) or []
     skipped = coverage.get("skipped", {}) or {}
@@ -180,7 +225,7 @@ def generate_report(result: dict, reviewer_name: str = "") -> bytes:
 
     security = _v(result, "security_flags", []) or []
     if security:
-        story += [Paragraph("6. Security notices", styles["Section"])]
+        story += [Paragraph("8. Security notices", styles["Section"])]
         rows = [[_para("Notice", styles["Cell"]), _para("Details", styles["Cell"])]]
         for flag in security:
             if isinstance(flag, dict):
