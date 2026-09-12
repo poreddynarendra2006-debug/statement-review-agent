@@ -6,6 +6,26 @@ let currentReviewData = null;
 let currentActionsMap = {};
 let allFindings = [];
 
+// What each button on the finding means to the API. The API accepts these
+// three values and nothing else, and stores the choice as `status`.
+const ACTION_STATUS = {
+  acknowledged: 'VERIFIED',
+  flagged_for_followup: 'NEEDS_INVESTIGATION',
+  dismissed: 'DISMISSED'
+};
+
+// How a recorded decision reads on screen.
+const ACTION_LABEL = {
+  VERIFIED: 'VERIFIED',
+  NEEDS_INVESTIGATION: 'FLAGGED FOR FOLLOW-UP',
+  DISMISSED: 'DISMISSED'
+};
+
+function actionLabel(action) {
+  if (!action || !action.status) return 'REVIEWED';
+  return ACTION_LABEL[action.status] || String(action.status).replace(/_/g, ' ');
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   if (typeof requireAuth === "function") {
     const authed = await requireAuth();
@@ -295,8 +315,7 @@ function renderFindingsTable(findings) {
     const tdStatus = createElement('td');
     const action = currentActionsMap[f.finding_ref];
     if (action) {
-      const statusText = (action.action_type || 'Reviewed').replace(/_/g, ' ');
-      const badgeAction = createElement('span', 'badge badge-low', statusText.toUpperCase());
+      const badgeAction = createElement('span', 'badge badge-low', actionLabel(action));
       tdStatus.appendChild(badgeAction);
     } else {
       const badgeAction = createElement('span', 'badge badge-high', 'UNREVIEWED');
@@ -391,7 +410,7 @@ function updateModalActionButtons(finding) {
 
   if (statusArea) {
     if (action) {
-      statusArea.textContent = `Action recorded by ${action.reviewer || 'Reviewer'}: ${action.action_type.replace(/_/g, ' ').toUpperCase()}`;
+      statusArea.textContent = `Action recorded by ${action.reviewer || 'Reviewer'}: ${actionLabel(action)}`;
       statusArea.style.display = 'block';
     } else {
       statusArea.style.display = 'none';
@@ -407,15 +426,27 @@ function updateModalActionButtons(finding) {
     const reviewerName = user ? user.name : "Reviewer";
     if (!currentReviewData) return;
 
+    const status = ACTION_STATUS[actionType];
+    if (!status) return;
+
     try {
+      // The API records a decision as `status` with `note`; these three are the
+      // only values it accepts. Sending the button's own name was rejected as a
+      // missing field, so nothing was ever recorded.
       const res = await recordAction(currentReviewData.review_id, {
         finding_ref: finding.finding_ref,
-        action_type: actionType,
+        status: status,
         reviewer: reviewerName,
-        notes: `Recorded on ${new Date().toISOString()}`
+        note: `Recorded on ${new Date().toISOString()}`
       });
 
-      currentActionsMap[finding.finding_ref] = res;
+      // The reply carries only the new action's id, so the row we keep for the
+      // table is built here rather than from the reply.
+      currentActionsMap[finding.finding_ref] = {
+        action_id: res && res.action_id,
+        status: status,
+        reviewer: reviewerName
+      };
       updateModalActionButtons(finding);
       filterAndRenderFindings();
     } catch (err) {
@@ -443,7 +474,7 @@ function exportFindingsCSV() {
   let csv = 'Finding Ref,Source,Topic,Description,Severity,Company,Year,Status\n';
   allFindings.forEach(f => {
     const act = currentActionsMap[f.finding_ref];
-    const statusStr = act ? act.action_type : 'unreviewed';
+    const statusStr = act ? actionLabel(act) : 'unreviewed';
     const cleanDesc = f.description.replace(/"/g, '""');
     csv += `"${f.finding_ref}","${f.source}","${f.topic}","${cleanDesc}","${f.severity}","${f.company}","${f.year}","${statusStr}"\n`;
   });

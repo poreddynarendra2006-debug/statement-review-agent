@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   setupCompanyDropdown(review);
+  setupRatioDropdown(review);
   setupEventListeners();
 
   renderRatioChart();
@@ -63,6 +64,28 @@ function setupCompanyDropdown(review) {
     opt.value = comp;
     if (idx === 0) opt.selected = true;
     selectCompany.appendChild(opt);
+  });
+}
+
+function setupRatioDropdown(review) {
+  // The list used to be written into the page by hand, and offered ratios the
+  // review never computes - Operating Margin among them - so choosing one drew
+  // an empty chart. Offer what this review actually contains instead.
+  const selectRatio = document.getElementById('selectRatio');
+  if (!selectRatio) return;
+
+  const names = Array.from(new Set(
+    (review.ratio_results || []).map(r => r.ratio_name).filter(Boolean)
+  )).sort();
+
+  if (names.length === 0) return;  // leave the page's own list alone
+
+  selectRatio.textContent = '';
+  names.forEach((name, idx) => {
+    const opt = createElement('option', null, name);
+    opt.value = name;              // matched against ratio_name as it is
+    if (idx === 0) opt.selected = true;
+    selectRatio.appendChild(opt);
   });
 }
 
@@ -98,20 +121,26 @@ function renderRatioChart() {
   const textColor = isLight ? '#475569' : '#9ca3af';
   const gridColor = isLight ? '#e2e8f0' : '#374151';
 
-  // Search ratios array
-  const ratiosList = currentReviewData.ratios || [];
-  const foundRatio = ratiosList.find(r => 
-    (r.company === selectedCompany || !selectedCompany) && 
-    (r.ratio_name === selectedRatioKey || r.ratio_name.toLowerCase() === selectedRatioKey.toLowerCase())
-  ) || ratiosList.find(r => r.ratio_name === selectedRatioKey);
+  // The review returns one row per company, year and ratio, under
+  // `ratio_results`. This read `currentReviewData.ratios` and expected each
+  // entry to carry a year-to-value map, so it found nothing whatever was
+  // selected and every chart read "No Data Available".
+  const ratiosList = currentReviewData.ratio_results || [];
+  const wanted = String(selectedRatioKey || '').toLowerCase();
+
+  const series = ratiosList.filter(r =>
+    (!selectedCompany || r.company === selectedCompany) &&
+    String(r.ratio_name || '').toLowerCase() === wanted &&
+    r.value !== null && r.value !== undefined
+  );
 
   let labels = [];
   let dataPoints = [];
 
-  if (foundRatio && foundRatio.values && typeof foundRatio.values === 'object') {
-    const sortedYears = Object.keys(foundRatio.values).sort();
-    labels = sortedYears;
-    dataPoints = sortedYears.map(y => foundRatio.values[y]);
+  if (series.length > 0) {
+    series.sort((a, b) => Number(a.year) - Number(b.year));
+    labels = series.map(r => String(r.year));
+    dataPoints = series.map(r => Number(r.value));
   } else {
     labels = ['No Data Available'];
     dataPoints = [0];
