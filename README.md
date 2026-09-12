@@ -83,6 +83,8 @@ Each folder has a `README.md` naming its owner and the files expected in it. See
 |:--|:--|
 | **[docs/HLD.md](docs/HLD.md)** | Architecture, data contracts, design decisions and the alternatives rejected |
 | **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** | AWS setup, deployment, rollback, demo-day runbook |
+| **[docs/MODEL_PERFORMANCE.md](docs/MODEL_PERFORMANCE.md)** | Precision, recall, F1 and the honest weak numbers, with how to reproduce each |
+| **[docs/ROADMAP.md](docs/ROADMAP.md)** | What the build cost, what we left out and why, and what we would do next |
 | **[STRUCTURE.md](STRUCTURE.md)** | Where each file belongs, and how to upload without using git |
 
 ---
