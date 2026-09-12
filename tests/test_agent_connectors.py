@@ -1,0 +1,152 @@
+"""The Evidence and Review connectors, tested without their packages installed.
+
+Both are stubbed here, so these tests state the contract this system relies on:
+what shape it hands over, and what it expects back. If the Evidence role's
+package changes shape, one of these fails and says which half moved.
+"""
+
+import sys
+import types
+
+import pytest
+
+from agents import evidence_agent, review_agent
+from agents.orchestrator import AnalysisResult
+
+
+class FakeItem:
+    def __init__(self, **fields):
+        self.__dict__.update(fields)
+
+    def to_dict(self):
+        return dict(self.__dict__)
+
+
+class FakePacket:
+    def __init__(self, **groups):
+        self.__dict__.update(groups)
+
+
+class FakeReview:
+    def __init__(self, summary, generation_mode):
+        self.summary = summary
+        self.generation_mode = generation_mode
+
+
+@pytest.fixture
+def evidence_module(monkeypatch):
+    """Stand in for the Evidence role's package."""
+    module = types.ModuleType("evidence_agent")
+    module.packet = FakePacket()
+    module.seen = []
+
+    def compile_all_findings(result):
+        module.seen.append(result)
+        return module.packet
+
+    module.compile_all_findings = compile_all_findings
+    monkeypatch.setitem(sys.modules, "evidence_agent", module)
+    return module
+
+
+@pytest.fixture
+def review_module(monkeypatch):
+    """Stand in for the Review role's package."""
+    module = types.ModuleType("review_agent")
+    module.result = FakeReview("Two matters need attention.", "deterministic_fallback")
+    module.generate_review = lambda packet: module.result
+    monkeypatch.setitem(sys.modules, "review_agent", module)
+    return module
+
+
+def test_findings_come_back_flat_and_in_reading_order(evidence_module):
+    evidence_module.packet = FakePacket(
+        validation_findings=[FakeItem(source="validation", rule_id="VAL_BS_01")],
+        trend_findings=[FakeItem(source="trend", metric="revenue")],
+        anomaly_findings=[FakeItem(source="anomaly", anomaly_type="margin_shift")],
+    )
+
+    findings = evidence_agent.compile_all_findings(AnalysisResult())
+
+    assert [f["source"] for f in findings] == ["validation", "trend", "anomaly"]
+    assert findings[0]["rule_id"] == "VAL_BS_01"
+
+
+def test_recurring_issues_flow_through_once_the_packet_carries_them(evidence_module):
+    evidence_module.packet = FakePacket(
+        validation_findings=[FakeItem(source="validation")],
+        recurring_findings=[FakeItem(source="recurring", years=[2017, 2018, 2019])],
+    )
+
+    findings = evidence_agent.compile_all_findings(AnalysisResult())
+
+    assert findings[-1]["years"] == [2017, 2018, 2019]
+
+
+def test_a_packet_with_no_findings_gives_an_empty_list(evidence_module):
+    assert evidence_agent.compile_all_findings(AnalysisResult()) == []
+
+
+def test_dictionaries_and_a_plain_list_are_both_accepted(evidence_module):
+    evidence_module.packet = [{"source": "validation"}, FakeItem(source="trend")]
+
+    findings = evidence_agent.compile_all_findings(AnalysisResult())
+
+    assert [f["source"] for f in findings] == ["validation", "trend"]
+
+
+def test_the_whole_result_is_handed_over_not_a_copy(evidence_module):
+    result = AnalysisResult(company="Halcyon Group")
+
+    evidence_agent.compile_all_findings(result)
+
+    assert evidence_module.seen == [result]
+
+
+@pytest.mark.parametrize("their_mode, ours", [
+    ("llm", "model"),
+    ("model", "model"),
+    ("deterministic_fallback", "heuristic"),
+    ("heuristic", "heuristic"),
+    ("", "heuristic"),
+    ("something new", "heuristic"),
+])
+def test_review_mode_is_reported_in_this_systems_terms(
+        evidence_module, review_module, their_mode, ours):
+    review_module.result = FakeReview("A summary.", their_mode)
+
+    summary, mode = review_agent.write_review(AnalysisResult())
+
+    assert (summary, mode) == ("A summary.", ours)
+
+
+def test_a_review_returned_as_plain_text_still_works(evidence_module, review_module):
+    review_module.generate_review = lambda packet: "Plain narrative."
+
+    assert review_agent.write_review(AnalysisResult()) == ("Plain narrative.", "heuristic")
+
+
+def test_write_review_is_preferred_if_they_ever_rename_it(evidence_module, review_module):
+    review_module.write_review = lambda packet: FakeReview("Renamed.", "llm")
+
+    assert review_agent.write_review(AnalysisResult()) == ("Renamed.", "model")
+
+
+def test_a_failing_review_does_not_discard_the_findings(evidence_module, review_module):
+    def explode(packet):
+        raise RuntimeError("model unavailable")
+
+    review_module.generate_review = explode
+    evidence_module.packet = FakePacket(validation_findings=[FakeItem(source="validation")])
+
+    from agents.orchestrator import ReviewOrchestrator
+    from api.dependencies import Record
+
+    result = ReviewOrchestrator(
+        evidence=evidence_agent.compile_all_findings,
+        review=review_agent.write_review,
+    ).run([Record(company="Halcyon Group", year=2019)])
+
+    assert len(result.findings) == 1
+    assert result.review_mode == "none"
+    assert any("model unavailable" in w for w in result.warnings)
