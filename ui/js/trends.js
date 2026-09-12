@@ -1,5 +1,5 @@
 /**
- * FinSight AI - Financial & Ratio Trends Controller
+ * AuditLens - Financial & Ratio Trends Controller
  */
 
 let currentReviewData = null;
@@ -25,6 +25,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
   currentReviewData = review;
+  // The page's own filters, table and canvases live inside the container,
+  // so put them back before anything looks them up.
+  restorePageMarkup(container);
 
   const subhead = document.getElementById('trendsSubhead');
   if (subhead && review.filename) {
@@ -51,7 +54,7 @@ function setupCompanyDropdown(review) {
   selectCompany.textContent = '';
   const companies = review.companies && review.companies.length > 0 
     ? review.companies 
-    : Array.from(new Set((review.ratios || []).map(r => r.company).filter(Boolean)));
+    : Array.from(new Set((review.ratio_results || []).map(r => r.company).filter(Boolean)));
 
   if (companies.length === 0) companies.push('Default');
 
@@ -151,7 +154,7 @@ function renderDeviationsTable(review) {
 
   tbody.textContent = '';
 
-  const deviations = review.trend_deviations || [];
+  const deviations = review.material_deviations || [];
   if (deviations.length === 0) {
     const tr = createElement('tr');
     const td = createElement('td', null, 'No material trend deviations recorded.');

@@ -1,5 +1,5 @@
 /**
- * FinSight AI - Create Account Controller
+ * AuditLens - Create Account Controller
  */
 
 document.addEventListener("DOMContentLoaded", () => {

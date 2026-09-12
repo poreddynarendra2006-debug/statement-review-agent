@@ -184,8 +184,30 @@ def test_openapi_documents_every_endpoint(client):
         assert path in paths, f"{path} missing from /docs"
 
 
-def test_root_points_somewhere_useful_until_the_front_end_exists(client):
-    assert client.get("/").json()["docs"] == "/docs"
+def test_a_reopened_review_knows_its_own_id(client, payload):
+    # The saved copy is written before the id exists, so reading one back must
+    # fill it in: the front end links to the PDF with it.
+    review_id = client.post("/review", json=payload).json()["review_id"]
+
+    reopened = client.get(f"/reviews/{review_id}").json()
+
+    assert reopened["review_id"] == review_id
+
+
+def test_a_review_reports_the_companies_it_covers_and_when_it_ran(client, payload):
+    body = client.post("/review", json=payload).json()
+
+    assert body["companies"] == sorted({r["company"] for r in payload["records"]})
+    assert body["created_at"]
+    assert body["filename"] == "", "records sent as JSON came from no file"
+
+
+def test_root_serves_the_reviewers_first_screen(client):
+    # The front end is in ui/, so / is its sign-in page rather than the JSON
+    # fallback. The fallback itself is covered by the mount tests below.
+    page = client.get("/")
+    assert page.status_code == 200
+    assert "text/html" in page.headers["content-type"]
 
 
 def test_front_end_is_served_when_present(tmp_path):

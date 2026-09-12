@@ -1,5 +1,5 @@
 /**
- * FinSight AI - Financial Risk Assessment Matrix Controller
+ * AuditLens - Financial Risk Assessment Matrix Controller
  */
 
 let currentReviewData = null;
@@ -25,6 +25,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
   currentReviewData = review;
+  // The page's own filters, table and canvases live inside the container,
+  // so put them back before anything looks them up.
+  restorePageMarkup(container);
 
   const subhead = document.getElementById('riskSubhead');
   if (subhead && review.filename) {
@@ -43,8 +46,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function renderRiskOverview(review) {
-  const riskScore = review.risk_score || { total_points: 0, risk_level: 'LOW', breakdown: [] };
-  const totalPoints = riskScore.total_points || 0;
+  const riskScore = review.risk_result || {};
+  const totalPoints = review.risk_score || 0;
   const level = (riskScore.risk_level || 'LOW').toUpperCase();
 
   const ptsEl = document.getElementById('riskScorePoints');
@@ -60,28 +63,31 @@ function renderRiskOverview(review) {
   }
 
   if (summaryEl) {
-    const failedVals = (review.validation_results || []).filter(v => !v.passed).length;
+    const failedVals = (review.failed_validations || []).length;
     const anomalyCount = (review.anomalies || []).length;
-    const devCount = (review.trend_deviations || []).length;
+    const devCount = (review.material_deviations || []).length;
 
     summaryEl.textContent = `Statement risk profile evaluated across ${failedVals} failed rule checks, ${anomalyCount} anomaly flags, and ${devCount} material trend deviations.`;
   }
 }
 
 function getNormalizedContributors(review) {
-  const riskScore = review.risk_score || {};
-  if (Array.isArray(riskScore.breakdown) && riskScore.breakdown.length > 0) {
-    return riskScore.breakdown.map(b => ({
+  const riskScore = review.risk_result || {};
+  // The risk engine explains its own score: contributors are the findings that
+  // earned the points, so they always add up to the score shown.
+  const contributors = riskScore.contributors || riskScore.breakdown;
+  if (Array.isArray(contributors) && contributors.length > 0) {
+    return contributors.map(b => ({
       source_agent: formatAgentName(b.source_agent),
       points: b.points || 0,
       severity: b.points >= 20 ? 'CRITICAL' : (b.points >= 10 ? 'HIGH' : 'MEDIUM'),
-      reasoning: b.reasoning || 'Risk factor identified by agent.'
+      reasoning: b.reason || b.reasoning || 'Risk factor identified by agent.'
     })).sort((a, b) => b.points - a.points);
   }
 
   // Fallback: build from findings
   const list = [];
-  (review.validation_results || []).filter(v => !v.passed).forEach(v => {
+  (review.failed_validations || []).forEach(v => {
     list.push({
       source_agent: 'Validation Agent',
       points: v.severity === 'CRITICAL' ? 25 : (v.severity === 'HIGH' ? 15 : 10),
@@ -95,11 +101,11 @@ function getNormalizedContributors(review) {
       source_agent: 'Anomaly Agent',
       points: a.severity === 'CRITICAL' ? 20 : (a.severity === 'HIGH' ? 12 : 8),
       severity: (a.severity || 'MEDIUM').toUpperCase(),
-      reasoning: `Flagged Metric: ${a.metric} (${a.description || a.anomaly_type})`
+      reasoning: `Flagged: ${a.anomaly_type || a.description || 'unusual pattern'}`
     });
   });
 
-  (review.trend_deviations || []).forEach(d => {
+  (review.material_deviations || []).forEach(d => {
     list.push({
       source_agent: 'Ratio Trend Agent',
       points: d.severity === 'CRITICAL' ? 15 : (d.severity === 'HIGH' ? 10 : 5),

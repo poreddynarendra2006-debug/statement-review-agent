@@ -40,6 +40,7 @@ import logging
 import os
 import tempfile
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
@@ -151,11 +152,16 @@ async def unhandled(request: Request, exc: Exception) -> JSONResponse:
 def _run_review(orchestrator: ReviewOrchestrator, reporting: Optional[Reporting],
                 records: List[Any], document_texts: Optional[List[str]] = None,
                 materiality: Optional[float] = None,
-                extra_warnings: Optional[List[str]] = None) -> Dict[str, Any]:
+                extra_warnings: Optional[List[str]] = None,
+                filename: str = "") -> Dict[str, Any]:
     """Run a review, save it when storage is available, and return the payload."""
     logger.info("reviewing %d record(s)", len(records))
     result = orchestrator.run(records, document_texts=document_texts, materiality=materiality)
     payload = result.to_dict()
+    # Stamped here rather than in the orchestrator: the file name and the clock
+    # belong to the request, not to the analysis.
+    payload["filename"] = filename
+    payload["created_at"] = datetime.now(timezone.utc).isoformat()
     if extra_warnings:
         payload["warnings"] = [*extra_warnings, *payload["warnings"]]
 
@@ -197,6 +203,11 @@ def _saved_review(reporting: Reporting, review_id: int) -> Dict[str, Any]:
     if not review:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"No saved review with id {review_id}.")
+    # Saved before its own id existed, so the stored copy carries none. Filling
+    # it in here means a reopened review links to its PDF like a fresh one.
+    review.setdefault("review_id", None)
+    if review.get("review_id") is None:
+        review["review_id"] = review.get("id", review_id)
     return review
 
 
@@ -345,7 +356,7 @@ async def review_upload(
 
     warnings = [f"Ingestion: {w}" for w in ingestion_warnings(ingested)]
     return await run_in_threadpool(_run_review, orchestrator, reporting, records,
-                                   None, materiality, warnings)
+                                   None, materiality, warnings, name)
 
 
 # ---------------------------------------------------------------------------

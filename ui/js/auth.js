@@ -1,5 +1,5 @@
 /**
- * FinSight AI - Authentication & Session Module
+ * AuditLens - Authentication & Session Module
  */
 
 const AUTH_SESSION_KEY = "authSession";

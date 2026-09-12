@@ -1,5 +1,5 @@
 /**
- * FinSight AI - AI Summary Controller
+ * AuditLens - AI Summary Controller
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -35,7 +35,7 @@ function renderSummaryPage(container, review) {
 
   const aiSummaryObj = review.ai_summary || {};
   const mode = aiSummaryObj.review_mode || (review.companies && review.companies.length > 1 ? 'Multi-Company' : 'Single-Company');
-  const summaryText = typeof review.summary === 'string' ? review.summary : (aiSummaryObj.summary || 'Statement reviewed and verified by FinSight AI.');
+  const summaryText = typeof review.summary === 'string' ? review.summary : (aiSummaryObj.summary || 'Statement reviewed and verified by AuditLens.');
   const securityFlags = aiSummaryObj.security_flags || review.security_flags || [];
 
   // --- Card 1: Executive AI Synthesis ---
@@ -112,12 +112,14 @@ function renderSummaryPage(container, review) {
   grid2.style.gap = '16px';
   grid2.style.fontSize = '0.88rem';
 
-  const failedCount = (review.validation_results || []).filter(v => !v.passed).length;
+  const failedCount = (review.failed_validations || []).length;
   const anomalyCount = (review.anomalies || []).length;
 
   addMetaPill(grid2, 'Review ID:', review.review_id || '-');
   addMetaPill(grid2, 'File Name:', review.filename || '-');
-  addMetaPill(grid2, 'Materiality Threshold:', formatPercent(review.materiality * 100));
+  // materiality is null when the review ran at each agent's own default.
+  addMetaPill(grid2, 'Materiality Threshold:',
+    review.materiality ? formatPercent(review.materiality * 100) : "Each agent's default");
   addMetaPill(grid2, 'Companies Detected:', (review.companies || []).join(', ') || 'Default');
   addMetaPill(grid2, 'Validation Failures:', formatNumber(failedCount));
   addMetaPill(grid2, 'Anomaly Flags:', formatNumber(anomalyCount));

@@ -1,5 +1,5 @@
 /**
- * FinSight AI - Audit Findings Controller
+ * AuditLens - Audit Findings Controller
  */
 
 let currentReviewData = null;
@@ -26,6 +26,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
   currentReviewData = review;
+  // The page's own filters, table and canvases live inside the container,
+  // so put them back before anything looks them up.
+  restorePageMarkup(container);
 
   // Subhead update
   const subhead = document.getElementById('findingsSubhead');
@@ -66,7 +69,7 @@ function extractNormalizedFindings(review) {
   // 1. Validation Failures
   const validationResults = review.validation_results || [];
   validationResults.forEach((val, idx) => {
-    if (val.passed === false) {
+    if (val.status === 'FAIL') {
       const ruleId = val.rule_id || `VAL_${idx + 1}`;
       const company = val.company || (review.companies ? review.companies[0] : 'Company');
       const year = val.year || '-';
@@ -96,7 +99,7 @@ function extractNormalizedFindings(review) {
     list.push({
       finding_ref: ref,
       source: 'Anomaly',
-      topic: ano.metric || `Anomaly_${idx + 1}`,
+      topic: ano.anomaly_type || `Anomaly_${idx + 1}`,
       description: `${ano.anomaly_type || 'Anomaly'}: ${ano.description || ''}`,
       severity: (ano.severity || 'MEDIUM').toUpperCase(),
       confidence: ano.confidence,
@@ -108,7 +111,7 @@ function extractNormalizedFindings(review) {
   });
 
   // 3. Trend Deviations
-  const deviations = review.trend_deviations || [];
+  const deviations = review.material_deviations || [];
   deviations.forEach((dev, idx) => {
     const company = dev.company || (review.companies ? review.companies[0] : 'Company');
     const year = dev.year || '-';
@@ -404,7 +407,7 @@ function exportFindingsCSV() {
   const url = window.URL.createObjectURL(blob);
   const a = createElement('a');
   a.href = url;
-  a.download = `FinSight_Findings_${currentReviewData?.review_id || 'Report'}.csv`;
+  a.download = `AuditLens_Findings_${currentReviewData?.review_id || 'Report'}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

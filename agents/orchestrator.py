@@ -47,6 +47,11 @@ class AnalysisResult:
     """
 
     company: str = "Unknown"
+    #: Every company in the submission. `company` summarises them in one line
+    #: ("60 companies"); this is the list behind it, for filters and headings.
+    companies: List[str] = field(default_factory=list)
+    #: The uploaded file this review came from, when it came from one.
+    filename: str = ""
     period: str = ""
     currency: str = "$"
     record_count: int = 0
@@ -114,6 +119,8 @@ class AnalysisResult:
 
         return {
             "company": self.company,
+            "companies": list(self.companies),
+            "filename": self.filename,
             "period": self.period,
             "currency": self.currency,
             "record_count": self.record_count,
@@ -199,8 +206,8 @@ class ReviewOrchestrator:
     # -- helpers -----------------------------------------------------------
 
     @staticmethod
-    def _identify(records: Sequence[Any]) -> tuple[str, str, str]:
-        companies = sorted({getattr(r, "company", None) for r in records} - {None})
+    def _identify(records: Sequence[Any]) -> tuple[str, str, str, List[str]]:
+        companies = sorted(str(c) for c in {getattr(r, "company", None) for r in records} - {None})
         years = sorted({getattr(r, "year", None) for r in records} - {None})
 
         if not companies:
@@ -219,7 +226,7 @@ class ReviewOrchestrator:
 
         currency = next((getattr(r, "currency", None) for r in records
                          if getattr(r, "currency", None)), "$")
-        return company, period, currency
+        return company, period, currency, companies
 
     def _screen_documents(self, texts: Sequence[str],
                           result: AnalysisResult) -> List[str]:
@@ -284,7 +291,8 @@ class ReviewOrchestrator:
             return result
 
         result.record_count = len(records)
-        result.company, result.period, result.currency = self._identify(records)
+        (result.company, result.period,
+         result.currency, result.companies) = self._identify(records)
 
         if document_texts:
             with timings.stage("guardrails"):

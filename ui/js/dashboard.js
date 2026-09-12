@@ -1,5 +1,5 @@
 /**
- * FinSight AI - Executive Dashboard Controller
+ * AuditLens - Executive Dashboard Controller
  */
 
 let failedRulesChartInstance = null;
@@ -56,10 +56,13 @@ function renderDashboardView(container, review) {
 
   const validationResults = review.validation_results || [];
   const anomalies = review.anomalies || [];
-  const deviations = review.trend_deviations || [];
-  const riskScore = review.risk_score || { total_points: 0, risk_level: 'LOW' };
+  const deviations = review.material_deviations || [];
+  const riskResult = review.risk_result || {};
+  const riskPoints = review.risk_score === null || review.risk_score === undefined ? 0 : review.risk_score;
+  const riskLevel = riskResult.risk_level || 'LOW';
 
-  const failedValidation = validationResults.filter(r => r.passed === false);
+  const failedValidation = review.failed_validations
+    || validationResults.filter(r => r.status === 'FAIL');
   const totalRuleChecks = validationResults.length;
 
   // --- 1. KPI Grid ---
@@ -84,11 +87,11 @@ function renderDashboardView(container, review) {
   kpi3.appendChild(createKpiFooter('fa-solid fa-chart-line', `${deviations.length} material deviations`));
 
   // KPI 4: Composite Risk
-  const kpi4Class = riskScore.risk_level === 'CRITICAL' || riskScore.risk_level === 'HIGH' ? 'kpi-card rose' : 'kpi-card emerald';
+  const kpi4Class = riskLevel === 'CRITICAL' || riskLevel === 'HIGH' ? 'kpi-card rose' : 'kpi-card emerald';
   const kpi4 = createElement('div', kpi4Class);
   kpi4.appendChild(createKpiHeader('Composite Risk Score', 'fa-solid fa-shield-virus'));
-  kpi4.appendChild(createElement('div', 'kpi-value', `${riskScore.total_points} / 100`));
-  kpi4.appendChild(createKpiFooter('fa-solid fa-shield', `Risk Level: ${riskScore.risk_level}`));
+  kpi4.appendChild(createElement('div', 'kpi-value', `${riskPoints} / 100`));
+  kpi4.appendChild(createKpiFooter('fa-solid fa-shield', `Risk Level: ${riskLevel}`));
 
   kpiGrid.appendChild(kpi1);
   kpiGrid.appendChild(kpi2);
@@ -165,7 +168,7 @@ function renderDashboardView(container, review) {
   aiBody.style.gap = '12px';
   aiBody.style.fontSize = '0.9rem';
 
-  const summaryText = typeof review.summary === 'string' ? review.summary : (review.ai_summary?.summary || 'Statement processed and validated by FinSight AI agent.');
+  const summaryText = typeof review.summary === 'string' ? review.summary : (review.ai_summary?.summary || 'Statement processed and validated by AuditLens agent.');
   const paragraphs = summaryText.split('\n\n').filter(p => p.trim());
 
   paragraphs.forEach(p => {
@@ -175,8 +178,11 @@ function renderDashboardView(container, review) {
     aiBody.appendChild(pEl);
   });
 
-  // Skipped coverage or warnings
-  if (review.skipped_coverage && review.skipped_coverage.length > 0) {
+  // Skipped coverage or warnings. The API reports these as coverage.skipped,
+  // an object of agent name -> the reason it did not run.
+  const skipped = Object.entries((review.coverage && review.coverage.skipped) || {})
+    .map(([agent, reason]) => `${agent}: ${reason}`);
+  if (skipped.length > 0) {
     const warnBox = createElement('div');
     warnBox.style.padding = '10px 14px';
     warnBox.style.borderRadius = 'var(--radius-md)';
@@ -190,7 +196,7 @@ function renderDashboardView(container, review) {
     warnTitle.style.marginBottom = '4px';
     warnBox.appendChild(warnTitle);
 
-    review.skipped_coverage.forEach(item => {
+    skipped.forEach(item => {
       const itemEl = createElement('div', null, `• ${item}`);
       itemEl.style.fontSize = '0.82rem';
       itemEl.style.color = 'var(--text-muted)';
@@ -263,7 +269,7 @@ function renderDashboardView(container, review) {
   anomalies.forEach(a => {
     priorityItems.push({
       source: 'Anomaly',
-      name: `${a.metric}: ${a.anomaly_type || a.description}`,
+      name: a.anomaly_type || a.description || 'Anomaly',
       severity: a.severity || 'MEDIUM',
       info: `${a.company || '-'} (${a.year || '-'})`
     });
@@ -347,9 +353,11 @@ function renderDashboardCharts(review) {
 
   const validationResults = review.validation_results || [];
   const anomalies = review.anomalies || [];
+  const failedValidation = review.failed_validations
+    || validationResults.filter(r => r.status === 'FAIL');
 
   // Chart 1: Failed Checks by Rule ID
-  const failedRules = validationResults.filter(r => !r.passed);
+  const failedRules = failedValidation;
   const ruleCounts = {};
   failedRules.forEach(r => {
     const id = r.rule_id || 'Other';
@@ -389,7 +397,7 @@ function renderDashboardCharts(review) {
 
   // Chart 2: Findings by Severity
   const sevCounts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
-  validationResults.filter(r => !r.passed).forEach(r => {
+  failedValidation.forEach(r => {
     const s = (r.severity || 'HIGH').toUpperCase();
     if (sevCounts[s] !== undefined) sevCounts[s]++;
     else sevCounts.HIGH++;

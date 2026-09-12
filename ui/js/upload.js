@@ -1,5 +1,5 @@
 /**
- * FinSight AI - Document Upload & SheetJS Preview Controller
+ * AuditLens - Document Upload & SheetJS Preview Controller
  */
 
 let currentUploadedFile = null;

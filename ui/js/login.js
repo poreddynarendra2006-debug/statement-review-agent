@@ -1,5 +1,5 @@
 /**
- * FinSight AI - Sign In Controller
+ * AuditLens - Sign In Controller
  */
 
 document.addEventListener("DOMContentLoaded", async () => {

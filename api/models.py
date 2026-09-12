@@ -124,6 +124,13 @@ class ReviewResponse(BaseModel):
     """
 
     company: str
+    companies: List[str] = Field(
+        default_factory=list,
+        description="Every company in the submission. `company` is the one-line "
+                    "summary of these, such as '60 companies'.",
+    )
+    filename: str = Field("", description="The uploaded file this review came from, if any.")
+    created_at: str = Field("", description="When the review ran, UTC, ISO 8601.")
     period: str
     currency: str
     record_count: int

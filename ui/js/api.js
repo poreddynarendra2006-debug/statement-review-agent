@@ -1,5 +1,5 @@
 /**
- * FinSight AI - Unified API & Endpoint Helper
+ * AuditLens - Unified API & Endpoint Helper
  */
 
 const API_BASE_URL = "";
@@ -127,7 +127,7 @@ async function downloadPDFReport(reviewId, customFilename) {
   const blobUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = blobUrl;
-  a.download = customFilename || `FinSight_Report_${reviewId}.pdf`;
+  a.download = customFilename || `AuditLens_Report_${reviewId}.pdf`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -172,6 +172,15 @@ function createElement(tag, className, textContent) {
   return el;
 }
 
+function restorePageMarkup(containerEl) {
+  // Puts back the markup showLoadingState() set aside, so the page's own
+  // filters, tables and chart canvases exist again before anything renders.
+  if (containerEl && containerEl.dataset.pageMarkup !== undefined) {
+    containerEl.innerHTML = containerEl.dataset.pageMarkup;
+  }
+}
+
+
 function showEmptyReviewState(containerEl) {
   containerEl.innerHTML = "";
   const card = createElement("div", "card");
@@ -200,6 +209,12 @@ function showEmptyReviewState(containerEl) {
 }
 
 function showLoadingState(containerEl, message = "Loading review data...") {
+  // Some pages keep their filters, table and canvases inside this container,
+  // so the markup is kept and put back by restorePageMarkup() once the data
+  // arrives. Without that, the spinner would delete the page it loads into.
+  if (containerEl.dataset.pageMarkup === undefined) {
+    containerEl.dataset.pageMarkup = containerEl.innerHTML;
+  }
   containerEl.innerHTML = "";
   const card = createElement("div", "card");
   card.style.textAlign = "center";

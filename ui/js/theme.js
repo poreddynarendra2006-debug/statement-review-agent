@@ -1,5 +1,5 @@
 /**
- * FinSight AI - Global Theme Controller (Dark / Light Mode)
+ * AuditLens - Global Theme Controller (Dark / Light Mode)
  */
 
 (function () {
