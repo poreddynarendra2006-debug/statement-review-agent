@@ -15,7 +15,7 @@ Cognizant NPN AI & Analytics 2027 · Use case #2 · Team 33
 
 This document describes the architecture of AuditLens: what the system does, how it is decomposed, what crosses each boundary, and which alternatives were considered and rejected.
 
-**In scope:** ingestion of financial statements, deterministic validation, trend and anomaly analysis, AI-generated review observations, risk scoring, reporting, and deployment.
+**In scope:** ingestion of CSV and Excel financial statements, deterministic validation, trend and anomaly analysis, AI-generated review observations, risk scoring, reporting, and deployment.
 
 **Out of scope:** general ledger integration, statutory filing, tax computation, consolidation of multi-entity groups, and any form of investment advice.
 
@@ -91,7 +91,7 @@ The defining structural feature is the **LLM boundary**. All computation happens
 
 | # | Component | Responsibility | Owner |
 |:--|:--|:--|:--|
-| C1 | **Ingestion** | Parse CSV, Excel and PDF statements; normalise heterogeneous column names into a single record schema | Data Ingestion |
+| C1 | **Ingestion** | Parse CSV and Excel statements; normalise heterogeneous column names into a single record schema | Data Ingestion |
 | C2 | **Orchestrator** | Sequence the pipeline, assemble `AnalysisResult`, expose the REST interface, record run duration | Orchestration & API |
 | C3 | **Validation Agent** | Five deterministic accounting identities, graded against a configurable materiality threshold | Validation Agent |
 | C4 | **Trend Agent** | Year-on-year movement per line item; liquidity, leverage, profitability and return ratios | Trend Agent |
@@ -138,10 +138,10 @@ These six objects are the interfaces between components. They are frozen at the 
 
 | Object | Defined in | Produced by | Consumed by |
 |:--|:--|:--|:--|
-| `FinancialRecord` | `extraction/normalizer.py` | Ingestion | All three analysis agents |
-| `ValidationResult` | `analysis/validation.py` | Validation Agent | Evidence, Risk |
+| `FinancialRecord` | `extraction/pipeline.py` | Ingestion | All three analysis agents |
+| `ValidationResult` | `validation_agent/models.py` | Validation Agent | Evidence, Risk |
 | `YoYResult` | `analysis/yoy_analysis.py` | Trend Agent | Evidence, Anomaly |
-| `AnomalyFinding` | `analysis/anomaly_detection.py` | Anomaly Agent | Evidence, Risk |
+| `AnomalyFinding` | `finsight/core/models.py` | Anomaly Agent | Evidence, Risk |
 | Evidence packet | `agents/evidence_agent.py` | Evidence Agent | Review Agent |
 | `AnalysisResult` | `agents/orchestrator.py` | Orchestrator | Frontend, Reporting |
 
@@ -153,7 +153,7 @@ These six objects are the interfaces between components. They are frozen at the 
 |:--|:--|:--|
 | Language | Python 3.11+ | Ecosystem fit for data and AI work |
 | Data | pandas, numpy | Tabular manipulation |
-| Parsing | openpyxl, pypdf | Excel and PDF ingestion |
+| Parsing | openpyxl | Excel ingestion (PDF was ruled out of scope on 12 Sep) |
 | ML | scikit-learn (IsolationForest) | Unsupervised peer-outlier detection |
 | GenAI | Gemini, OpenAI, offline heuristic | Multi-provider with a no-key fallback |
 | API | FastAPI, uvicorn | Typed, documented REST surface |

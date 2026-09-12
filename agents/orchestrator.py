@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from .guardrails import prepare_document_text
+from . import groundedness
 from .planner import Planner, Requirement
 from .timing import Timings
 
@@ -71,6 +72,9 @@ class AnalysisResult:
     findings: List[Any] = field(default_factory=list)
     ai_summary: str = ""
     review_mode: str = "none"          # model | heuristic | none
+    #: Whether every number in ai_summary came from the computed evidence.
+    #: This is the design principle measured rather than assumed.
+    groundedness: Dict[str, Any] = field(default_factory=dict)
     risk_result: Optional[Any] = None
 
     #: Which agents ran, which did not, and why. Rendered as the coverage strip.
@@ -143,6 +147,7 @@ class AnalysisResult:
             "findings": dump(self.findings),
             "ai_summary": self.ai_summary,
             "review_mode": self.review_mode,
+            "groundedness": self.groundedness,
             "coverage": self.coverage,
             "timings": self.timings,
             "elapsed_seconds": self.elapsed_seconds,
@@ -332,6 +337,17 @@ class ReviewOrchestrator:
                     else:
                         result.ai_summary = narrative or ""
                         result.review_mode = "model"
+
+                    # The design principle says the model never produces a
+                    # figure. This is where that is checked rather than assumed.
+                    report = groundedness.check(result.ai_summary, result)
+                    result.groundedness = report.to_dict()
+                    if not report.is_grounded:
+                        result.warnings.append(
+                            "The written review contains "
+                            f"{len(report.unsupported)} number(s) not found in the computed "
+                            f"evidence ({', '.join(report.unsupported[:5])}). Treat the "
+                            "narrative as unverified and rely on the findings below it.")
                 except Exception as exc:  # noqa: BLE001
                     result.warnings.append(f"AI review unavailable, continuing without it: {exc}")
                     result.review_mode = "none"

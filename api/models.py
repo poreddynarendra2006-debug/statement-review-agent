@@ -167,6 +167,11 @@ class ReviewResponse(BaseModel):
                     "'heuristic' for the offline fallback, 'none' if neither ran.",
     )
 
+    groundedness: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Whether every number in ai_summary appears in the computed evidence. "
+                    "Empty when no review was written.",
+    )
     coverage: CoverageResponse = Field(default_factory=CoverageResponse)
     timings: Dict[str, float] = Field(default_factory=dict)
     elapsed_seconds: float = 0.0

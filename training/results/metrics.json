@@ -1,0 +1,48 @@
+{
+  "run": {
+    "date": "2026-09-12",
+    "hardware": "Google Colab, NVIDIA T4",
+    "training_minutes": 9,
+    "torch": "2.11.0+cu128",
+    "transformers": "5.16.1"
+  },
+  "model": {
+    "base": "google/flan-t5-base",
+    "parameters": "250M",
+    "architecture": "T5ForConditionalGeneration",
+    "layers": 12,
+    "d_model": 768,
+    "attention_heads": 12,
+    "why_this_size": "Small enough to run on CPU, and the model is only asked to phrase a conclusion the deterministic engine already established. It never computes a figure."
+  },
+  "data": {
+    "train_examples": 1020,
+    "validation_examples": 180,
+    "source": "training/generate_dataset.py, seed 20260909",
+    "method": "Knowledge distillation from a rule-based teacher: our own finding logic supplies the supervision, the model learns the phrasing."
+  },
+  "training": {
+    "epochs": 6,
+    "learning_rate": 0.0003,
+    "batch_size": 8,
+    "weight_decay": 0.01,
+    "final_training_loss": 0.09,
+    "final_validation_loss": 0.09,
+    "loss_curve": "loss_curve.png",
+    "note": "Training loss fell from 1.93 to about 0.09 and validation loss tracked it the whole way, so the model generalised rather than memorised."
+  },
+  "groundedness": {
+    "measured_on": "180 validation examples",
+    "every_number_quoted_from_input": "48.3%",
+    "including_figures_the_input_supports": "61.7%",
+    "comments_containing_an_invented_number": "38.3%",
+    "numbers_generated": 659,
+    "numbers_unsupported": 81,
+    "unsupported_share": "12.29%",
+    "worst_case_found": "The model wrote a cost of revenue of 75,670 where the input said 74,670.",
+    "what_we_did_about_it": "Built agents/groundedness.py: every number in a written review is checked against the computed evidence at runtime, and anything unsupported is reported to the reviewer rather than shown as fact. This is why the architecture never lets the model produce a figure."
+  },
+  "rouge": {
+    "note": "Recorded in the notebook output for section 6; to be copied in here."
+  }
+}

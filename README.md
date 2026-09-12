@@ -57,13 +57,17 @@ We also **measure** it: after the AI writes its narrative, every number in the t
 
 | Folder | Contents |
 |:--|:--|
-| `extraction/` | Reading CSV, Excel and PDF statements into one common format |
-| `analysis/` | Validation rules, year-on-year trends, ratios, anomaly detection, risk scoring |
-| `agents/` | Pipeline orchestration and the AI review layer |
+| `extraction/` | Reading CSV and Excel statements into one common format |
+| `analysis/` | Year-on-year trends, ratios, anomaly detection, recurring issues, peer comparison |
+| `agents/` | Pipeline orchestration, the AI review layer and the groundedness check |
 | `api/` | HTTP interface — `POST /review`, `GET /health` |
 | `ui/` | The reviewer's screens |
 | `reports/` | PDF report generation |
 | `database/` | Storage for reviews, findings and reviewer actions |
+| `risk_reporting/` | The explainable 0-100 risk score |
+| `validation_agent/` | The five accounting identity checks |
+| `finsight/` | The anomaly detection model |
+| `training/` | Fine-tuning our own review-comment model, and its measured results |
 | `utils/` | Logging, configuration, formatting |
 | `data/` | Sample datasets |
 | `tests/` | Automated tests |
