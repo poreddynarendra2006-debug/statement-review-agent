@@ -1,0 +1,74 @@
+name: CI
+
+# Runs on every push and every pull request, so a change that breaks the review
+# pipeline is caught here rather than on the live service.
+#
+# This is the half that runs on its own. The deploy half (deploy-aws.yml) is
+# triggered by hand, and repeats these same tests before it touches AWS.
+#
+# Two things are checked:
+#   1. the test suite, on the same Python the container runs
+#   2. that the image still builds - a broken Dockerfile passes every test and
+#      then fails the deploy, so it is worth catching before that point
+#
+# The image is built but not pushed: CI needs no AWS credentials at all.
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run the tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # The same version as the container, so a passing run here means the
+          # same thing as a passing run in production.
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Test
+        run: pytest -q
+
+  image:
+    name: Check the image still builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: docker build -t auditlens:ci .
+
+      - name: Start it and ask for its health
+        run: |
+          docker run -d --name auditlens-ci -p 8000:8000 auditlens:ci
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/health; then
+              echo
+              echo "The container answers on /health."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "The container never answered on /health. Its log:"
+          docker logs auditlens-ci
+          exit 1
+
+      - name: Stop it
+        if: always()
+        run: docker rm -f auditlens-ci || true
