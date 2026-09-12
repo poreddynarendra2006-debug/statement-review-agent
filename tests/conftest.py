@@ -32,10 +32,26 @@ TESTS_NEEDING = {
     "evidence_tests": ("evidence_agent", "review_agent"),
 }
 
+def _installed(package: str) -> bool:
+    """True only when the package has real code behind it.
+
+    A folder holding just a README still answers find_spec, because Python
+    treats any directory as a namespace package. That is exactly the state a
+    role's folder is in while it waits for their upload, so the origin is
+    checked too: a real package points at an __init__.py, a placeholder folder
+    at nothing.
+    """
+    try:
+        spec = importlib.util.find_spec(package)
+    except (ImportError, ValueError):
+        return False
+    return spec is not None and spec.origin is not None
+
+
 collect_ignore_glob = [
     f"{folder}/*"
     for folder, packages in TESTS_NEEDING.items()
-    if any(importlib.util.find_spec(package) is None for package in packages)
+    if not all(_installed(package) for package in packages)
 ]
 
 
