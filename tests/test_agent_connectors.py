@@ -5,13 +5,17 @@ what shape it hands over, and what it expects back. If the Evidence role's
 package changes shape, one of these fails and says which half moved.
 """
 
+import importlib
 import sys
 import types
 
 import pytest
 
-from agents import evidence_agent, review_agent
 from agents.orchestrator import AnalysisResult
+
+# The connectors import the Evidence role's packages at module level, so that a
+# missing package means "not installed" rather than a connector that fails on
+# every review. The fixtures below put stand-ins in place first, then import.
 
 
 class FakeItem:
@@ -50,6 +54,12 @@ def evidence_module(monkeypatch):
 
 
 @pytest.fixture
+def evidence_agent(evidence_module):
+    """The connector, imported against the stand-in package."""
+    return importlib.reload(importlib.import_module("agents.evidence_agent"))
+
+
+@pytest.fixture
 def review_module(monkeypatch):
     """Stand in for the Review role's package."""
     module = types.ModuleType("review_agent")
@@ -59,7 +69,13 @@ def review_module(monkeypatch):
     return module
 
 
-def test_findings_come_back_flat_and_in_reading_order(evidence_module):
+@pytest.fixture
+def review_agent(review_module, evidence_module):
+    """The connector, imported against both stand-in packages."""
+    return importlib.reload(importlib.import_module("agents.review_agent"))
+
+
+def test_findings_come_back_flat_and_in_reading_order(evidence_module, evidence_agent):
     evidence_module.packet = FakePacket(
         validation_findings=[FakeItem(source="validation", rule_id="VAL_BS_01")],
         trend_findings=[FakeItem(source="trend", metric="revenue")],
@@ -72,7 +88,7 @@ def test_findings_come_back_flat_and_in_reading_order(evidence_module):
     assert findings[0]["rule_id"] == "VAL_BS_01"
 
 
-def test_recurring_issues_flow_through_once_the_packet_carries_them(evidence_module):
+def test_recurring_issues_flow_through_once_the_packet_carries_them(evidence_module, evidence_agent):
     evidence_module.packet = FakePacket(
         validation_findings=[FakeItem(source="validation")],
         recurring_findings=[FakeItem(source="recurring", years=[2017, 2018, 2019])],
@@ -83,11 +99,11 @@ def test_recurring_issues_flow_through_once_the_packet_carries_them(evidence_mod
     assert findings[-1]["years"] == [2017, 2018, 2019]
 
 
-def test_a_packet_with_no_findings_gives_an_empty_list(evidence_module):
+def test_a_packet_with_no_findings_gives_an_empty_list(evidence_module, evidence_agent):
     assert evidence_agent.compile_all_findings(AnalysisResult()) == []
 
 
-def test_dictionaries_and_a_plain_list_are_both_accepted(evidence_module):
+def test_dictionaries_and_a_plain_list_are_both_accepted(evidence_module, evidence_agent):
     evidence_module.packet = [{"source": "validation"}, FakeItem(source="trend")]
 
     findings = evidence_agent.compile_all_findings(AnalysisResult())
@@ -95,7 +111,7 @@ def test_dictionaries_and_a_plain_list_are_both_accepted(evidence_module):
     assert [f["source"] for f in findings] == ["validation", "trend"]
 
 
-def test_the_whole_result_is_handed_over_not_a_copy(evidence_module):
+def test_the_whole_result_is_handed_over_not_a_copy(evidence_module, evidence_agent):
     result = AnalysisResult(company="Halcyon Group")
 
     evidence_agent.compile_all_findings(result)
@@ -112,7 +128,7 @@ def test_the_whole_result_is_handed_over_not_a_copy(evidence_module):
     ("something new", "heuristic"),
 ])
 def test_review_mode_is_reported_in_this_systems_terms(
-        evidence_module, review_module, their_mode, ours):
+        evidence_module, review_module, review_agent, their_mode, ours):
     review_module.result = FakeReview("A summary.", their_mode)
 
     summary, mode = review_agent.write_review(AnalysisResult())
@@ -120,19 +136,30 @@ def test_review_mode_is_reported_in_this_systems_terms(
     assert (summary, mode) == ("A summary.", ours)
 
 
-def test_a_review_returned_as_plain_text_still_works(evidence_module, review_module):
+def test_a_review_returned_as_plain_text_still_works(evidence_module, review_module, review_agent):
     review_module.generate_review = lambda packet: "Plain narrative."
 
     assert review_agent.write_review(AnalysisResult()) == ("Plain narrative.", "heuristic")
 
 
-def test_write_review_is_preferred_if_they_ever_rename_it(evidence_module, review_module):
+def test_write_review_is_preferred_if_they_ever_rename_it(evidence_module, review_module, review_agent):
     review_module.write_review = lambda packet: FakeReview("Renamed.", "llm")
 
     assert review_agent.write_review(AnalysisResult()) == ("Renamed.", "model")
 
 
-def test_a_failing_review_does_not_discard_the_findings(evidence_module, review_module):
+def test_the_connector_is_absent_until_their_package_is_installed():
+    # How the API knows the component is not installed yet: importing the
+    # connector must fail, rather than wiring one that raises on every review.
+    for name in ("evidence_agent", "review_agent", "agents.evidence_agent", "agents.review_agent"):
+        sys.modules.pop(name, None)
+
+    with pytest.raises(ImportError):
+        importlib.import_module("agents.evidence_agent")
+
+
+def test_a_failing_review_does_not_discard_the_findings(
+        evidence_module, review_module, evidence_agent, review_agent):
     def explode(packet):
         raise RuntimeError("model unavailable")
 

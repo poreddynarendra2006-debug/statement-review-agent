@@ -12,6 +12,11 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+# Module level on purpose: if the Evidence role's package is not installed this
+# import fails, and the API reports the component as missing instead of wiring
+# a connector that raises on every review.
+from evidence_agent import compile_all_findings as build_packet
+
 #: The packet's groups, in the order a reviewer should meet them. Recurring is
 #: listed too, so it flows through the moment their package starts collecting
 #: it; until then the group is simply absent.
@@ -25,8 +30,6 @@ GROUPS = (
 
 def compile_all_findings(result: Any) -> List[Dict[str, Any]]:
     """Every finding the Evidence agent assembled, as plain dictionaries."""
-    from evidence_agent import compile_all_findings as build_packet
-
     packet = build_packet(result)
 
     # Already a list of findings: nothing to unpack.
