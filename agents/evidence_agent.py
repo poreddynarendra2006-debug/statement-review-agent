@@ -24,8 +24,11 @@ GROUPS = (
     "validation_findings",
     "trend_findings",
     "anomaly_findings",
-    "recurring_findings",
+    "recurring_issues",
 )
+
+#: Groups whose items are recurrences of an earlier finding.
+RECURRING_GROUPS = frozenset({"recurring_issues", "recurring_findings"})
 
 
 def compile_all_findings(result: Any) -> List[Dict[str, Any]]:
@@ -39,7 +42,16 @@ def compile_all_findings(result: Any) -> List[Dict[str, Any]]:
     findings: List[Dict[str, Any]] = []
     for group in GROUPS:
         for item in getattr(packet, group, None) or []:
-            findings.append(_as_dict(item))
+            finding = _as_dict(item)
+            if group in RECURRING_GROUPS:
+                # A recurring issue carries the agent that first raised it, so
+                # in one flat list it would read as a validation or trend
+                # finding. Name it for what it is, and keep the origin.
+                origin = finding.get("source")
+                if origin and origin != "recurring":
+                    finding["origin"] = origin
+                finding["source"] = "recurring"
+            findings.append(finding)
     return findings
 
 

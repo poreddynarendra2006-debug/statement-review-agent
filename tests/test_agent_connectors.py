@@ -91,12 +91,26 @@ def test_findings_come_back_flat_and_in_reading_order(evidence_module, evidence_
 def test_recurring_issues_flow_through_once_the_packet_carries_them(evidence_module, evidence_agent):
     evidence_module.packet = FakePacket(
         validation_findings=[FakeItem(source="validation")],
-        recurring_findings=[FakeItem(source="recurring", years=[2017, 2018, 2019])],
+        recurring_issues=[FakeItem(source="recurring", years=[2017, 2018, 2019])],
     )
 
     findings = evidence_agent.compile_all_findings(AnalysisResult())
 
     assert findings[-1]["years"] == [2017, 2018, 2019]
+
+
+def test_a_recurring_issue_is_labelled_recurring_not_by_where_it_started(
+        evidence_module, evidence_agent):
+    # Recurrences carry the agent that first raised them, so without this they
+    # would read as ordinary validation findings in the reviewer's list.
+    evidence_module.packet = FakePacket(
+        recurring_issues=[FakeItem(source="validation", key="VAL_GP_02", years=[2016, 2017, 2020])],
+    )
+
+    finding = evidence_agent.compile_all_findings(AnalysisResult())[0]
+
+    assert finding["source"] == "recurring"
+    assert finding["origin"] == "validation", "where it started is still worth knowing"
 
 
 def test_a_packet_with_no_findings_gives_an_empty_list(evidence_module, evidence_agent):
@@ -148,11 +162,11 @@ def test_write_review_is_preferred_if_they_ever_rename_it(evidence_module, revie
     assert review_agent.write_review(AnalysisResult()) == ("Renamed.", "model")
 
 
-def test_the_connector_is_absent_until_their_package_is_installed():
-    # How the API knows the component is not installed yet: importing the
-    # connector must fail, rather than wiring one that raises on every review.
-    for name in ("evidence_agent", "review_agent", "agents.evidence_agent", "agents.review_agent"):
-        sys.modules.pop(name, None)
+def test_the_connector_is_absent_when_their_package_is(monkeypatch):
+    # How the API knows a component is not installed: importing the connector
+    # must fail, rather than wiring one that raises on every review.
+    monkeypatch.setitem(sys.modules, "evidence_agent", None)
+    monkeypatch.delitem(sys.modules, "agents.evidence_agent", raising=False)
 
     with pytest.raises(ImportError):
         importlib.import_module("agents.evidence_agent")

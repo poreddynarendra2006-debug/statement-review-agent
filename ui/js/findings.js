@@ -133,6 +133,27 @@ function extractNormalizedFindings(review) {
     });
   });
 
+  // 4. Recurring issues - the same problem in three or more years, which
+  // matters more to a reviewer than any single year's finding.
+  const recurring = review.recurring_issues || [];
+  recurring.forEach((rec, idx) => {
+    const company = rec.company || 'Company';
+    const years = Array.isArray(rec.years) ? rec.years : [];
+    const ref = `recurring:${company}:${rec.key || idx}`;
+
+    list.push({
+      finding_ref: ref,
+      source: 'Recurring',
+      topic: rec.key || `Recurring_${idx + 1}`,
+      description: rec.issue || `Repeated in ${years.length} years`,
+      severity: (rec.severity || 'MEDIUM').toUpperCase(),
+      company: company,
+      year: years.length ? `${years[0]}-${years[years.length - 1]}` : '-',
+      details: { Years: years.join(', '), Occurrences: rec.occurrences, Evidence: rec.evidence },
+      original: rec
+    });
+  });
+
   return list;
 }
 
