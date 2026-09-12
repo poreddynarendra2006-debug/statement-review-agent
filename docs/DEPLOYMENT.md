@@ -192,9 +192,21 @@ Every setting is an environment variable with a safe default. The image itself s
 | `PORT` | `8000` | Port the server listens on |
 | `CORS_ORIGINS` | `*` | Only matters if the screens are served from another address |
 | `UI_DIR` | `ui/` | Folder the screens are served from |
+| `SEED_ACCOUNT_EMAIL`, `SEED_ACCOUNT_PASSWORD` | unset | An account recreated whenever the app starts, so a deploy doesn't sign the team out. Set both or neither. See 4.1. |
+| `SEED_ACCOUNT_NAME`, `SEED_ACCOUNT_ROLE` | `AuditLens Reviewer`, `Senior Financial Auditor` | Name and role for that account |
 | `GEMINI_API_KEY`, `OPENAI_API_KEY` | unset | **Leave unset.** By team decision no hosted AI service is used; if one is set, Data Ingestion's column mapper sends column names and sample values to that provider. |
 
 To change a variable on AWS, use **Update service** on the service page in the ECS console.
+
+### 4.1 The account that survives a deploy
+
+Accounts are rows in a SQLite file **inside the task**, so replacing the task throws them away. That is what a deploy does, and on 12 September it signed the team out of the live service mid-afternoon — the account had been created that morning and the deploy was nobody's fault.
+
+Setting `SEED_ACCOUNT_EMAIL` and `SEED_ACCOUNT_PASSWORD` on the service means that account is recreated every time the container starts, so there is always one sign-in that works, however many times we deploy.
+
+What it does **not** do is save anyone else's account, or any saved review — those still go. The password is a service environment variable, readable by anyone with access to the ECS console, so treat it as a shared demo login rather than a personal one. An account somebody registered themselves is never overwritten.
+
+The complete fix is storage that outlives the task — a persistent volume (EFS) mounted at `/app/var`, or a managed database. Both are in `docs/ROADMAP.md`.
 
 ---
 
@@ -344,7 +356,7 @@ Give it this inline permissions policy - exactly the calls the workflow makes:
 
 ## 8. Limits to know before a demo
 
-- **Data resets on every deploy or restart.** Reviews and accounts live in SQLite inside the task. Demo reviews come back automatically; accounts do not - **register again right before presenting.**
+- **Data resets on every deploy.** Reviews and accounts live in SQLite inside the task. Deploys are the only thing that has ever replaced it - an account made now still works tomorrow, as long as nobody ships. Set `SEED_ACCOUNT_EMAIL`/`SEED_ACCOUNT_PASSWORD` (section 4.1) so at least one sign-in always survives, and **deploy before the demo, not during it.**
 - **Exactly one task.** Keep maximum tasks at 1 while storage is SQLite (section 3.5). Moving to a managed database (RDS PostgreSQL) removes both limits.
 - **Large results.** A 480-row review is about 4.8 MB of JSON; responses are compressed to roughly a tenth of that on the wire.
 - **A few seconds per review.** About 3 seconds for 480 company-years, most of it in Trend forecasting and Anomaly model training. The first request after a restart is slower while libraries load.

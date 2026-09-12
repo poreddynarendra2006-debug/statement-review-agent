@@ -48,6 +48,23 @@ ROLES = ("Senior Financial Auditor", "Chief Financial Officer (CFO)", "Risk & Co
 MIN_PASSWORD, MAX_PASSWORD = 8, 128
 EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
+#: The account the container recreates whenever it starts.
+#:
+#: The database is a file inside the container, so replacing the container -
+#: which is what a deployment does - takes every account with it, and the team
+#: found themselves signed out of the live service by a deployment they hadn't
+#: made. Recreating one known account on start means a deployment no longer
+#: locks anyone out.
+#:
+#: The password is read from the environment and never committed. Leave these
+#: unset - as they are locally and in the tests - and nothing is seeded.
+SEED_VARS = {
+    "email": "SEED_ACCOUNT_EMAIL",
+    "password": "SEED_ACCOUNT_PASSWORD",
+    "name": "SEED_ACCOUNT_NAME",
+    "role": "SEED_ACCOUNT_ROLE",
+}
+
 SIGN_IN_FAILED = "Invalid email or password."
 SIGN_IN_REQUIRED = "Sign in to continue."
 
@@ -113,6 +130,54 @@ def prepare_accounts() -> None:
             pass
     except Exception:  # noqa: BLE001 - the service must start even if storage is unavailable
         logger.exception("could not prepare account storage")
+        return
+    seed_account()
+
+
+def seed_account() -> None:
+    """Recreate the configured account if it isn't there.
+
+    Called on every start. An account someone has already created is left
+    exactly as it is - this only fills a gap, it never overwrites a password.
+    Like the rest of startup, a failure here is logged and the service still
+    serves.
+    """
+    email = os.environ.get(SEED_VARS["email"], "").strip().lower()
+    password = os.environ.get(SEED_VARS["password"], "")
+    if not email or not password:
+        return
+
+    name = os.environ.get(SEED_VARS["name"], "").strip() or "AuditLens Reviewer"
+    role = os.environ.get(SEED_VARS["role"], "").strip() or ROLES[0]
+
+    # The same rules the sign-up form applies, so a seeded account is never
+    # weaker than one a reviewer could have created.
+    if not EMAIL.match(email) or len(email) > 254:
+        logger.warning("%s is not a valid email address; nothing seeded", SEED_VARS["email"])
+        return
+    if not (MIN_PASSWORD <= len(password) <= MAX_PASSWORD
+            and re.search(r"[A-Za-z]", password) and re.search(r"\d", password)):
+        logger.warning("%s does not meet the password rules; nothing seeded", SEED_VARS["password"])
+        return
+    if role not in ROLES:
+        logger.warning("%s is not one of the reviewer roles; nothing seeded", SEED_VARS["role"])
+        return
+
+    try:
+        with _database() as conn:
+            existing = conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+            if existing:
+                logger.info("account %s is already present; left untouched", email)
+                return
+            conn.execute(
+                "INSERT INTO users (name, email, role, password_hash, created_at) VALUES (?, ?, ?, ?, ?)",
+                (name, email, role, hash_password(password), _stamp(_now())),
+            )
+    except Exception:  # noqa: BLE001 - a missing seed account must not stop the service
+        logger.exception("could not seed the account")
+        return
+
+    logger.info("seeded account %s", email)  # the password is never logged
 
 
 def _now() -> datetime:
