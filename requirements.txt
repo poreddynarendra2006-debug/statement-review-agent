@@ -20,6 +20,11 @@ python-multipart>=0.0.9
 # Reporting
 reportlab>=4.1.0
 
+# Actual-vs-forecast charts from the trend agent. It was imported but never
+# declared, so it worked on our own machines and was missing from the container
+# - the first CI run caught it.
+matplotlib>=3.8.0
+
 # Loading a local .env file
 python-dotenv>=1.0.0
 
