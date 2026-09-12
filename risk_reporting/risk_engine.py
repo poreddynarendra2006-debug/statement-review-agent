@@ -8,6 +8,7 @@ be imported, so it can also be used as a small standalone service.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from enum import Enum
 from math import log1p
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -23,10 +24,22 @@ DIMINISHING_EXPONENT = 0.35
 DENSITY_WEIGHT = 0.10
 DENSITY_BASE = 10
 
-# Trend deviations are movements to look at, not proven errors, so together
-# they may add at most this many points before the density adjustment.
-CAPPED_SOURCES = {"deviation"}
-STATISTICAL_POINTS_CAP = 25.0
+# Statistical findings are things to look at, not proven errors, so each of
+# these sources may contribute at most this many points before the density
+# adjustment. A failed accounting identity has no ceiling: those are errors of
+# fact, and enough of them should reach 100 on their own.
+#
+# Both detectors return a share of any file by construction - the anomaly model
+# works to an alert budget of roughly 5% of rows - so without a ceiling a
+# spotless set of books scores as badly as a broken one. Measured on our two
+# datasets:
+#
+#     anomalies uncapped    clean 84 CRITICAL   defective 100 CRITICAL
+#     anomalies capped      clean 47 MEDIUM     defective  77 CRITICAL
+#
+# The ceiling is what lets the number mean something: clean books sit where
+# they always did, and the defective file is now clearly above them.
+STATISTICAL_POINT_CAPS = {"deviation": 25.0, "anomaly": 15.0}
 
 
 @dataclass(frozen=True)
@@ -82,7 +95,19 @@ def _get(obj: Any, field: str, default: Any = None) -> Any:
 
 
 def _status(value: Any) -> str:
-    return str(value).upper() if value is not None else ""
+    """The text of a status or severity, whether it arrives as one or as an enum.
+
+    The anomaly agent reports severity as an enum, and `str()` on one gives
+    "Severity.HIGH" rather than "HIGH". That matched nothing in the score
+    table, so every anomaly - HIGH ones included - was quietly scored as LOW
+    and described as LOW in the report, while the anomalies table beside it
+    showed the real severity.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, Enum):
+        value = value.value
+    return str(value).upper()
 
 
 def _normalise_severity(value: Any) -> str:
@@ -302,12 +327,15 @@ def calculate_risk(agent_outputs: Mapping[str, Iterable[Any]]) -> RiskScoreResul
             )
         )
 
-    capped = [i for i, f in enumerate(findings) if f.source_agent in CAPPED_SOURCES]
-    capped_total = sum(raw_points[i] for i in capped)
-    if capped_total > STATISTICAL_POINTS_CAP:
-        scale = STATISTICAL_POINTS_CAP / capped_total
-        for i in capped:
-            raw_points[i] *= scale
+    # Each statistical source is held to its own ceiling, so a flood of
+    # anomalies cannot crowd out a single failed accounting identity.
+    for source, cap in STATISTICAL_POINT_CAPS.items():
+        capped = [i for i, f in enumerate(findings) if f.source_agent == source]
+        capped_total = sum(raw_points[i] for i in capped)
+        if capped_total > cap:
+            scale = cap / capped_total
+            for i in capped:
+                raw_points[i] *= scale
 
     # Finding density is a modest multiplier. Severity mix remains the main
     # driver, while a high-density review gets a small additional penalty.

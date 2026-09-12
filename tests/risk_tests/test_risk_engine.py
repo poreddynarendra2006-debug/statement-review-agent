@@ -141,13 +141,31 @@ def _critical_anomalies(count):
     ]
 
 
+def _critical_failures(count):
+    """Failed accounting identities - errors of fact, so they carry no ceiling.
+
+    The tests below are about the engine itself: that it clamps at 100, that
+    severity beats sheer count, that adding a finding never lowers the score.
+    They used anomalies simply as a convenient finding. Anomalies are now held
+    to a ceiling of their own, because a budgeted detector returns findings on
+    any file and an uncapped one made clean books read CRITICAL - so they can
+    no longer reach 100 alone, and these properties are stated with a source
+    that can. The ceiling itself is tested in test_statistical_caps.py.
+    """
+    return [
+        ValidationResult(f"R{i}", "Critical mismatch", 2025, "FAIL", 100, 0, 100,
+                         "CRITICAL", "x", "a-b", "critical")
+        for i in range(count)
+    ]
+
+
 def test_1000_critical_findings_are_clamped_to_100():
-    result = calculate_risk({"anomaly": _critical_anomalies(1000)})
+    result = calculate_risk({"validation": _critical_failures(1000)})
     assert result.score == 100
 
 
 def test_100_critical_findings_are_clamped_to_100():
-    result = calculate_risk({"anomaly": _critical_anomalies(100)})
+    result = calculate_risk({"validation": _critical_failures(100)})
     assert result.score == 100
 
 
@@ -158,20 +176,20 @@ def test_score_is_always_within_zero_and_100():
 
 
 def test_clamped_contributor_points_sum_exactly_to_100():
-    result = calculate_risk({"anomaly": _critical_anomalies(1000)})
+    result = calculate_risk({"validation": _critical_failures(1000)})
     assert result.score == 100
     assert sum(c.points for c in result.contributors) == result.score
 
 
 def test_three_critical_still_outscore_115_medium():
     medium = [
-        AnomalyFinding("Acme", 2025, "medium", .5, "MEDIUM", .8,
-                       f"M{i}", [], {}, "medium", "", "m", 50)
+        ValidationResult(f"M{i}", "Medium mismatch", 2025, "FAIL", 50, 40, 10,
+                         "MEDIUM", "x", "a-b", "medium")
         for i in range(115)
     ]
-    critical = _critical_anomalies(3)
-    medium_score = calculate_risk({"anomaly": medium}).score
-    critical_score = calculate_risk({"anomaly": critical}).score
+    critical = _critical_failures(3)
+    medium_score = calculate_risk({"validation": medium}).score
+    critical_score = calculate_risk({"validation": critical}).score
     assert critical_score > medium_score
 
 
