@@ -66,6 +66,7 @@ class AnalysisResult:
     deviations: List[Any] = field(default_factory=list)
     anomalies: List[Any] = field(default_factory=list)
     recurring_issues: List[Any] = field(default_factory=list)
+    peer_findings: List[Any] = field(default_factory=list)
 
     findings: List[Any] = field(default_factory=list)
     ai_summary: str = ""
@@ -138,6 +139,7 @@ class AnalysisResult:
             "material_deviations": dump(self.material_deviations),
             "anomalies": dump(self.anomalies),
             "recurring_issues": dump(self.recurring_issues),
+            "peer_findings": dump(self.peer_findings),
             "findings": dump(self.findings),
             "ai_summary": self.ai_summary,
             "review_mode": self.review_mode,
@@ -307,8 +309,7 @@ class ReviewOrchestrator:
         self._unpack_trend(outputs.get("trend"), result)
         result.anomalies = list(outputs.get("anomaly") or [])
         result.recurring_issues = list(outputs.get("recurring") or [])
-        if outputs.get("peer"):
-            result.anomalies.extend(outputs["peer"])
+        result.peer_findings = list(outputs.get("peer") or [])
 
         for name, reason in plan.skipped.items():
             result.warnings.append(f"{name} did not run: {reason}")

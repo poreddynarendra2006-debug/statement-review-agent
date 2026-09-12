@@ -48,6 +48,7 @@ COMPONENT_ENTRY_POINTS: Dict[str, List[Tuple[str, str]]] = {
     "trend": [("analysis.trend", "run_trend_analysis")],
     "anomaly": [("analysis.anomaly_detection", "run_all_anomaly_detection")],
     "recurring": [("analysis.recurring_issues", "detect_recurring_issues")],
+    "peer": [("analysis.peer_comparison", "compare_with_peers")],
     "evidence": [("agents.evidence_agent", "compile_all_findings")],
     "review": [("agents.review_agent", "write_review")],
 }
@@ -175,8 +176,14 @@ def risk_adapter(calculate_risk: Callable[..., Any]) -> Callable[[AnalysisResult
 
     The orchestrator hands over the whole AnalysisResult; the risk engine
     expects findings grouped by the agent that produced them. Only findings
-    that can carry risk are passed: failed checks, anomalies, and material
+    that can carry risk are passed: failed checks, anomalies and material
     deviations.
+
+    Peer findings are deliberately left out. Being unlike one's peers is not a
+    defect - a specialist lender genuinely carries more debt than a software
+    firm - and scoring it as one took clean books from 44 MEDIUM to 82
+    CRITICAL, which would have made the score useless for telling real
+    problems apart. They reach the reviewer as findings instead.
     """
 
     def score(result: AnalysisResult) -> Any:

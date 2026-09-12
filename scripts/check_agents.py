@@ -21,6 +21,7 @@ database, never the real one.
 from __future__ import annotations
 
 import csv
+import copy
 import json
 import logging
 import os
@@ -396,6 +397,54 @@ def check_recurring() -> Tuple[str, str]:
         f"2-year upload {'skipped' if reason else 'not skipped'}")
 
 
+def check_peer() -> Tuple[str, str]:
+    compare = _first_available(COMPONENT_ENTRY_POINTS["peer"])
+    if compare is None:
+        return MISSING, "analysis/peer_comparison.py has no compare_with_peers yet"
+
+    note_missing_inputs()
+    # Plant one company whose margin is nothing like its industry's, so the
+    # right answer is known regardless of what the generated file holds.
+    # Copied first: the loaded records are shared with every other check, and
+    # planting a defect in them made the clean file score 91 CRITICAL later on.
+    records = [copy.deepcopy(r) for r in load_records(CLEAN)]
+    planted = next((r for r in records if year_of(r) == 2023), None)
+    if planted is not None:
+        revenue = get(planted, "revenue") or 0
+        setattr(planted, "net_income", -3 * revenue)
+
+    findings = compare(records)
+    flagged = {(get(f, "company"), get(f, "year")) for f in findings}
+    share = len(flagged) / len(records) if records else 0
+
+    line(f"Input: {CLEAN.name} ({len(records)} company-years), with one planted company-year "
+         f"whose net income is minus three times its revenue:")
+    if planted is not None:
+        line(f"  {get(planted, 'company')} {year_of(planted)}")
+    line(f"Reported: {len(findings)} finding(s) across {len(flagged)} company-years "
+         f"({share:.1%} of the file)")
+    for finding in findings[:5]:
+        line(f"  [{get(finding, 'severity')}] {get(finding, 'company')} {get(finding, 'year')}: "
+             f"{short(get(finding, 'issue'), 105)}")
+
+    found_planted = planted is None or (get(planted, "company"), year_of(planted)) in flagged
+    small_groups = [f for f in findings if (get(f, "peer_count") or 0) < 5]
+    line(f"Right answer: the planted company-year is reported, every comparison uses 5 or more "
+         f"companies, and well under a quarter of the file is flagged")
+    line(f"  planted company-year reported: {'yes' if found_planted else 'NO'}")
+    line(f"  comparisons against fewer than 5 companies: {len(small_groups)}")
+
+    two_companies = [r for r in records if get(r, "company") in
+                     sorted({get(r, "company") for r in records})[:2]]
+    reason = (orchestrator().run(two_companies).coverage.get("skipped") or {}).get("peer")
+    line(f"Two companies only: {reason or 'peer comparison still ran - it should have skipped'}")
+
+    ok = found_planted and not small_groups and 0 < share <= 0.25 and bool(reason)
+    return (PASS if ok else CHECK), (
+        f"{len(findings)} findings over {share:.1%} of company-years, "
+        f"planted {'found' if found_planted else 'MISSED'}, small upload skipped")
+
+
 def check_evidence() -> Tuple[str, str]:
     if orchestrator()._evidence is None:
         return MISSING, "agents/evidence_agent.py has no compile_all_findings yet"
@@ -555,10 +604,11 @@ CHECKS: Dict[str, Tuple[str, Callable[[], Tuple[str, str]]]] = {
     "trend": ("3. Trend", check_trend),
     "anomaly": ("4. Anomaly", check_anomaly),
     "recurring": ("5. Recurring issues", check_recurring),
-    "evidence": ("6. Evidence", check_evidence),
-    "review": ("7. Review (AI summary + guardrail)", check_review),
-    "risk": ("8. Risk scoring", check_risk),
-    "reporting": ("9. Reporting (history, PDF, monitoring)", check_reporting),
+    "peer": ("6. Peer comparison", check_peer),
+    "evidence": ("7. Evidence", check_evidence),
+    "review": ("8. Review (AI summary + guardrail)", check_review),
+    "risk": ("9. Risk scoring", check_risk),
+    "reporting": ("10. Reporting (history, PDF, monitoring)", check_reporting),
 }
 
 

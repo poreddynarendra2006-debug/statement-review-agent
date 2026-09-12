@@ -157,6 +157,7 @@ class ReviewResponse(BaseModel):
     material_deviations: List[Dict[str, Any]] = Field(default_factory=list)
     anomalies: List[Dict[str, Any]] = Field(default_factory=list)
     recurring_issues: List[Dict[str, Any]] = Field(default_factory=list)
+    peer_findings: List[Dict[str, Any]] = Field(default_factory=list)
     findings: List[Dict[str, Any]] = Field(default_factory=list)
 
     ai_summary: str = ""

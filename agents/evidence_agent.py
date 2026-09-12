@@ -52,6 +52,13 @@ def compile_all_findings(result: Any) -> List[Dict[str, Any]]:
                     finding["origin"] = origin
                 finding["source"] = "recurring"
             findings.append(finding)
+
+    # Peer comparison came after their package, so its findings are not in the
+    # packet. Added here rather than left out, and skipped if their package
+    # starts carrying them, so nothing is ever listed twice.
+    if not any(f.get("source") == "peer" for f in findings):
+        findings.extend(_as_dict(item) for item in getattr(result, "peer_findings", None) or [])
+
     return findings
 
 

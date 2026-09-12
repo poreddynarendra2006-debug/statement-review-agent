@@ -32,6 +32,7 @@ They belong to Orchestration & API, and everyone's code or tests depend on them:
 - everything in `api/`
 - `analysis/anomaly_detection.py` (connects the Anomaly agent to the app)
 - `analysis/recurring_issues.py` (finds problems that repeat across years)
+- `analysis/peer_comparison.py` (compares each company against others in its industry)
 - `Dockerfile`, `entrypoint.sh`, `requirements.txt`, `pyproject.toml`
 
 On GitHub, uploading a file with the same name into the same folder **replaces** the old file - it does not merge them. That is how a shared file gets lost.

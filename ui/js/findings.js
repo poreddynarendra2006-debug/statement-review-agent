@@ -154,6 +154,30 @@ function extractNormalizedFindings(review) {
     });
   });
 
+  // 5. Peer comparison - how this company sits against others in its industry.
+  const peers = review.peer_findings || [];
+  peers.forEach((peer, idx) => {
+    const company = peer.company || 'Company';
+    const year = peer.year || '-';
+
+    list.push({
+      finding_ref: `peer:${company}:${year}:${peer.metric || idx}`,
+      source: 'Peer',
+      topic: peer.metric || `Peer_${idx + 1}`,
+      description: peer.issue || 'Stands apart from peers',
+      severity: (peer.severity || 'MEDIUM').toUpperCase(),
+      company: company,
+      year: year,
+      details: {
+        'Peer group': peer.peer_group,
+        'Peers compared': peer.peer_count,
+        'Peer median': peer.peer_median,
+        'Middle half': `${peer.peer_low} to ${peer.peer_high}`
+      },
+      original: peer
+    });
+  });
+
   return list;
 }
 

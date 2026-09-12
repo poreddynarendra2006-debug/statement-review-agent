@@ -11,11 +11,32 @@ real import and every test that used it keeps working - which is also how we
 find out immediately if a contract has drifted.
 """
 
+import importlib.util
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
 import pytest
+
+
+# ---------------------------------------------------------------------------
+# A teammate's tests are skipped when their package is not installed yet,
+# rather than stopping collection for the whole project. Without this, one
+# folder of tests uploaded ahead of its code takes every other test down with
+# it - which is exactly what happened on 12 Sep.
+# ---------------------------------------------------------------------------
+
+TESTS_NEEDING = {
+    "evidence_review": ("evidence_agent", "review_agent"),
+    "evidence_tests": ("evidence_agent", "review_agent"),
+}
+
+collect_ignore_glob = [
+    f"{folder}/*"
+    for folder, packages in TESTS_NEEDING.items()
+    if any(importlib.util.find_spec(package) is None for package in packages)
+]
 
 
 # ---------------------------------------------------------------------------
