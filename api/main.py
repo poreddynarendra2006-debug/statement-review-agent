@@ -153,7 +153,7 @@ def _run_review(orchestrator: ReviewOrchestrator, reporting: Optional[Reporting]
                 records: List[Any], document_texts: Optional[List[str]] = None,
                 materiality: Optional[float] = None,
                 extra_warnings: Optional[List[str]] = None,
-                filename: str = "") -> Dict[str, Any]:
+                filename: str = "", owner_id: Optional[int] = None) -> Dict[str, Any]:
     """Run a review, save it when storage is available, and return the payload."""
     logger.info("reviewing %d record(s)", len(records))
     result = orchestrator.run(records, document_texts=document_texts, materiality=materiality)
@@ -168,7 +168,8 @@ def _run_review(orchestrator: ReviewOrchestrator, reporting: Optional[Reporting]
     payload["review_id"] = None
     if reporting is not None:
         try:
-            payload["review_id"] = reporting.database.save_review(payload)
+            # Saved against the account that ran it, so nobody else sees it.
+            payload["review_id"] = reporting.database.save_review({**payload, "owner_id": owner_id})
         except Exception:  # noqa: BLE001 - a saved copy is a convenience, the review is the point
             logger.exception("review completed but could not be saved")
             payload["warnings"] = [*payload["warnings"],
@@ -198,9 +199,22 @@ def require_monitoring(reporting: Reporting = Depends(require_reporting)) -> Any
     return reporting.monitoring
 
 
-def _saved_review(reporting: Reporting, review_id: int) -> Dict[str, Any]:
+def _owner(account: Optional[UserResponse]) -> Optional[int]:
+    return account.id if account is not None else None
+
+
+def _saved_review(reporting: Reporting, review_id: int,
+                  account: Optional[UserResponse] = None) -> Dict[str, Any]:
+    """A saved review the caller may see: their own, or a shared demo one.
+
+    Anyone else's review answers exactly as a missing one does - not "forbidden",
+    which would confirm that the id exists. Reviews used to be visible to every
+    signed-in account, so a new account opened the history and found the
+    team's uploaded statements.
+    """
     review = reporting.database.get_review(review_id)
-    if not review:
+    owner = review.pop("owner_id", None) if review else None
+    if not review or (account is not None and owner is not None and owner != account.id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"No saved review with id {review_id}.")
     # Saved before its own id existed, so the stored copy carries none. Filling
@@ -238,7 +252,8 @@ def health() -> HealthResponse:
           tags=["review"])
 def review(request: ReviewRequest,
            orchestrator: ReviewOrchestrator = Depends(get_orchestrator),
-           reporting: Optional[Reporting] = Depends(get_reporting)) -> Dict[str, Any]:
+           reporting: Optional[Reporting] = Depends(get_reporting),
+           account: Optional[UserResponse] = Depends(require_user)) -> Dict[str, Any]:
     """Review records sent as JSON.
 
     One entry per company-year. Figures that are absent cause the checks
@@ -250,7 +265,7 @@ def review(request: ReviewRequest,
     """
     return _run_review(orchestrator, reporting, to_records(request.records),
                        document_texts=request.document_texts,
-                       materiality=request.materiality)
+                       materiality=request.materiality, owner_id=_owner(account))
 
 
 def _as_uploaded(message: str, temp_path: str, name: str) -> str:
@@ -268,6 +283,7 @@ async def review_upload(
     orchestrator: ReviewOrchestrator = Depends(get_orchestrator),
     ingest: Optional[Callable[..., Any]] = Depends(get_ingestion),
     reporting: Optional[Reporting] = Depends(get_reporting),
+    account: Optional[UserResponse] = Depends(require_user),
 ) -> Dict[str, Any]:
     """Upload a statement file and review it.
 
@@ -356,7 +372,7 @@ async def review_upload(
 
     warnings = [f"Ingestion: {w}" for w in ingestion_warnings(ingested)]
     return await run_in_threadpool(_run_review, orchestrator, reporting, records,
-                                   None, materiality, warnings, name)
+                                   None, materiality, warnings, name, _owner(account))
 
 
 # ---------------------------------------------------------------------------
@@ -366,9 +382,12 @@ async def review_upload(
 
 @app.get("/reviews", dependencies=SIGNED_IN, responses=UNAVAILABLE, tags=["history"])
 def list_reviews(limit: int = Query(20, ge=1, le=200),
-                 reporting: Reporting = Depends(require_reporting)) -> List[Dict[str, Any]]:
-    """Recent saved reviews, newest first."""
-    reviews = reporting.database.list_reviews(limit=limit)
+                 reporting: Reporting = Depends(require_reporting),
+                 account: Optional[UserResponse] = Depends(require_user)) -> List[Dict[str, Any]]:
+    """Your saved reviews and the shared demo ones, newest first."""
+    owner = _owner(account)
+    reviews = (reporting.database.list_reviews(limit=limit) if owner is None
+               else reporting.database.list_reviews(limit=limit, owner_id=owner))
     for review in reviews:
         # The table calls it `id`; every other endpoint and the front end call
         # it `review_id`. Both are returned so neither has to know the other.
@@ -378,9 +397,10 @@ def list_reviews(limit: int = Query(20, ge=1, le=200),
 
 @app.get("/reviews/{review_id}", dependencies=SIGNED_IN, responses={404: {"model": ErrorResponse}, **UNAVAILABLE},
          tags=["history"])
-def get_review(review_id: int, reporting: Reporting = Depends(require_reporting)) -> Dict[str, Any]:
+def get_review(review_id: int, reporting: Reporting = Depends(require_reporting),
+               account: Optional[UserResponse] = Depends(require_user)) -> Dict[str, Any]:
     """One saved review, including the full result."""
-    return _saved_review(reporting, review_id)
+    return _saved_review(reporting, review_id, account)
 
 
 @app.get("/reviews/{review_id}/report.pdf", response_class=Response, dependencies=SIGNED_IN,
@@ -397,7 +417,7 @@ def review_report(review_id: int,
     if reporting.report is None:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                             detail="PDF reports are not available yet: the report generator is not installed.")
-    result = full_result(_saved_review(reporting, review_id))
+    result = full_result(_saved_review(reporting, review_id, account))
     pdf = reporting.report.generate_report(result, reviewer_name=reviewer_name)
     return Response(
         content=pdf,
@@ -408,9 +428,10 @@ def review_report(review_id: int,
 
 @app.get("/reviews/{review_id}/actions", dependencies=SIGNED_IN, responses={404: {"model": ErrorResponse}, **UNAVAILABLE},
          tags=["history"])
-def list_actions(review_id: int, reporting: Reporting = Depends(require_reporting)) -> List[Dict[str, Any]]:
+def list_actions(review_id: int, reporting: Reporting = Depends(require_reporting),
+                 account: Optional[UserResponse] = Depends(require_user)) -> List[Dict[str, Any]]:
     """Every reviewer action recorded against a review."""
-    _saved_review(reporting, review_id)
+    _saved_review(reporting, review_id, account)
     return reporting.database.get_actions(review_id)
 
 
@@ -426,7 +447,7 @@ def add_action(review_id: int, action: ActionRequest,
     When someone is signed in, the action is recorded under their account's
     name, whatever the request says.
     """
-    _saved_review(reporting, review_id)
+    _saved_review(reporting, review_id, account)
     reviewer = account.name if account else action.reviewer
     try:
         action_id = reporting.database.record_action(

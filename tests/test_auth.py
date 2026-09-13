@@ -22,7 +22,7 @@ class Storage:
     def __init__(self):
         self.reviewers = []
 
-    def list_reviews(self, limit=20):
+    def list_reviews(self, limit=20, owner_id=None):
         return [{"id": 1, "company": "Acme"}]
 
     def get_review(self, review_id):

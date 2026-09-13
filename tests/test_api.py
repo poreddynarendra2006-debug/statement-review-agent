@@ -122,7 +122,7 @@ class FakeDatabase:
     def get_review(self, review_id):
         return self.reviews.get(review_id)
 
-    def list_reviews(self, limit=50):
+    def list_reviews(self, limit=50, owner_id=None):
         newest = sorted(self.reviews.values(), key=lambda r: -r["id"])
         return [{k: v for k, v in r.items() if k != "result_json"} for r in newest][:limit]
 
