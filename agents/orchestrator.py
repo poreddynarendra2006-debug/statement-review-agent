@@ -24,6 +24,7 @@ from .guardrails import prepare_document_text
 from . import groundedness
 from .planner import Planner, Requirement
 from .timing import Timings
+from .years import is_plausible_year
 
 #: Stage names, in the order they run. Used for timings and the coverage strip.
 STAGES = (
@@ -215,7 +216,11 @@ class ReviewOrchestrator:
     @staticmethod
     def _identify(records: Sequence[Any]) -> tuple[str, str, str, List[str]]:
         companies = sorted(str(c) for c in {getattr(r, "company", None) for r in records} - {None})
-        years = sorted({getattr(r, "year", None) for r in records} - {None})
+        all_years = sorted({getattr(r, "year", None) for r in records} - {None})
+        # A year no statement can cover - 2099, 1492 - is reported by
+        # validation. It must not also stretch the review period; a period of
+        # "FY2016 - FY2099" reads as if the file really ran that long.
+        years = [y for y in all_years if is_plausible_year(y)] or all_years
 
         if not companies:
             company = "Unknown"

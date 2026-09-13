@@ -26,6 +26,9 @@ import pandas as pd
 from validation_agent.checks import (validate_data_quality, validate_domain_sanity,
                                      validate_duplicates, validate_schema)
 from validation_agent.models import ValidationResult
+from validation_agent.rules import MAX_VALID_YEAR
+
+from agents.years import latest_valid_year
 
 #: Without these a row cannot be reviewed at all, so a blank one is a failure
 #: rather than a skipped check.
@@ -135,4 +138,30 @@ def run_data_quality_checks(records: Sequence[Any]) -> List[ValidationResult]:
             findings = _required_only(findings)
         results.extend(_result(kind, finding) for finding in findings or [])
 
+    results.extend(_result("domain", finding) for finding in _future_years(records))
     return results
+
+
+def _future_years(records: Sequence[Any]) -> List[Dict[str, Any]]:
+    """Years that have not begun yet.
+
+    The Validation rule only rejects years past 2100, so 2099 went through.
+    Years past 2100 are left to that rule, so nothing is reported twice.
+    """
+    latest = latest_valid_year()
+    findings = []
+    for record in records:
+        row = _as_dict(record)
+        try:
+            year = int(float(row.get("year")))
+        except (TypeError, ValueError):
+            continue
+        if latest < year <= MAX_VALID_YEAR:
+            findings.append({
+                "company": row.get("company"),
+                "year": year,
+                "severity": "HIGH",
+                "message": f"Year {year} has not begun; the latest year a statement "
+                           f"can cover is {latest}",
+            })
+    return findings
