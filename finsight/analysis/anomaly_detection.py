@@ -215,6 +215,49 @@ class IsolationForestModel:
 CERTAIN_ROBUST_Z = 30.0
 
 
+def _impossible_values(record: dict[str, Any]) -> bool:
+    """True when a record holds figures no real set of accounts can have.
+
+    Kept whatever the alert budget allows, like CERTAIN_ROBUST_Z. A record can be
+    impossible without being statistically extreme: net income above revenue
+    looks ordinary beside its peers if the rest of the file is small, so the
+    budget used to drop it. These are facts, not judgement calls.
+
+    None of these fires on the clean, defective or Kaggle datasets, so the
+    ordinary alert rate is unchanged.
+    """
+    def number(*names: str) -> Optional[float]:
+        for name in names:
+            value = record.get(name)
+            try:
+                if value is not None and value == value:  # value == value drops NaN
+                    return float(value)
+            except (TypeError, ValueError):
+                continue
+        return None
+
+    revenue = number("revenue")
+    assets = number("total_assets")
+    net_income = number("net_income")
+    gross_profit = number("gross_profit")
+    liabilities = number("total_liabilities")
+    equity = number("shareholder_equity", "total_equity")
+
+    if assets is not None and assets <= 0:
+        return True
+    if revenue is not None and revenue > 0:
+        if net_income is not None and net_income > revenue:
+            return True
+        if gross_profit is not None and gross_profit > revenue * 1.0001:
+            return True
+    if assets is not None and assets > 0:
+        if liabilities is not None and liabilities > 5 * assets:
+            return True
+        if equity is not None and equity < -assets:
+            return True
+    return False
+
+
 class AnomalyDetector:
     """Production-quality Universal Financial Anomaly Detection Agent."""
 
@@ -556,7 +599,24 @@ class AnomalyDetector:
         # z-test's 3. Those are kept whatever the budget allows. Without this,
         # the cap silently dropped real findings: a file with ten obvious
         # anomalies in forty rows reported two, because two was 4.8% of forty.
-        certain = max_abs_rz >= CERTAIN_ROBUST_Z
+        #
+        # Records holding impossible figures are kept too. Being far from the
+        # rest only catches what is extreme; a file with ten planted problems in
+        # fifty-five rows still reported three, because net income above
+        # revenue or negative assets need not be statistically extreme at all.
+        raw_dicts: list[dict[str, Any]] = []
+        for r in records:
+            if isinstance(r, FinancialRecord):
+                raw_dicts.append(r.to_dict())
+            elif isinstance(r, dict):
+                raw_dicts.append(r)
+            else:
+                raw_dicts.append(dict(r))
+        impossible = np.array([_impossible_values(d) for d in raw_dicts], dtype=bool)
+        if impossible.shape[0] != num_records:
+            impossible = np.zeros(num_records, dtype=bool)
+
+        certain = (max_abs_rz >= CERTAIN_ROBUST_Z) | impossible
         if is_anomaly_mask.sum() > target_flag_count and num_records >= 20:
             budget = max(0, target_flag_count - int(certain.sum()))
             discretionary = np.where(is_anomaly_mask & ~certain)[0]
@@ -565,6 +625,10 @@ class AnomalyDetector:
                 strongest = discretionary[np.argsort(calibrated_scores[discretionary])[-budget:]]
                 kept[strongest] = True
             is_anomaly_mask = certain | kept
+        else:
+            # Under budget the cap is not applied, but an impossible record may
+            # not have scored high enough to be flagged at all - include it.
+            is_anomaly_mask = is_anomaly_mask | impossible
 
         # Compute Confidence Scores
         yoy_col_indices = [i for i, c in enumerate(features_used) if c.startswith("yoy_") or c.endswith("_growth") or c.endswith("_change")]
@@ -583,14 +647,6 @@ class AnomalyDetector:
         )
 
         # 8. Build Anomaly Findings
-        raw_dicts: list[dict[str, Any]] = []
-        for r in records:
-            if isinstance(r, FinancialRecord):
-                raw_dicts.append(r.to_dict())
-            elif isinstance(r, dict):
-                raw_dicts.append(r)
-            else:
-                raw_dicts.append(dict(r))
 
         # Typical values and normal ranges in each feature's own unit. The z-score
         # baseline is fitted on scaled model inputs, so its medians can't be shown to reviewers.
