@@ -2,8 +2,8 @@
 
 **Owner:** Risk & Reporting
 
-Upload the files from your `tests/` folder:
+Tests for the risk engine, database, monitoring and the PDF report.
 
-`__init__.py`, `test_database.py`, `test_monitoring.py`, `test_report.py`, `test_risk_engine.py`
-
-Upload into this folder only, never into `tests/` directly.
+```bash
+python -m pytest tests/risk_tests
+```

@@ -1,20 +1,12 @@
 # `data/`
 
-**Owner:** Data Ingestion (Member 2), with Validation (Member 3) for test cases
+Datasets used for development, tests and the demo.
 
-Sample and demo datasets.
-
-## Files that belong here
-
-| File | What it does |
+| File | What it is |
 |:--|:--|
-| `clean_financial_data.csv` | A statement set with no errors. |
-| `corrupted_financial_data.csv` | A statement set with known planted errors. |
+| `dummy_statements_clean.csv` | 480 company-years of synthetic statements with no planted errors |
+| `dummy_statements_defective.csv` | The same companies with errors planted for testing |
+| `dummy_statements_labels.json` | The answer key: which errors were planted, and where |
+| `kaggle_financial_statements.csv` | Real financial statements of major companies, 2009-2023, from Kaggle |
 
-## Contract
-
-Never commit a real client file here. Never commit the .db file — it is generated.
-
----
-
-*Delete this README once the folder has real files in it.*
+The synthetic files come from `scripts/generate_dummy_statements.py`. No client data is stored in this repository.

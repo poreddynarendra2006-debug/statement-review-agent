@@ -1,6 +1,6 @@
 # `training/`
 
-**Owner:** Evidence & Review (Member 6), with Orchestration (Member 1) for packaging
+**Owner:** Evidence & Review, with Orchestration & API for packaging
 
 We do not call a hosted language model. We train our own small model to write
 review comments, and this folder is how.

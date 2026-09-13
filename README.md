@@ -60,20 +60,19 @@ We also **measure** it: after the AI writes its narrative, every number in the t
 | `extraction/` | Reading CSV and Excel statements into one common format |
 | `analysis/` | Year-on-year trends, ratios, anomaly detection, recurring issues, peer comparison |
 | `agents/` | Pipeline orchestration, the AI review layer and the groundedness check |
-| `api/` | HTTP interface — `POST /review`, `GET /health` |
+| `api/` | REST API, sign-in, review history, PDF reports and monitoring |
 | `ui/` | The reviewer's screens |
 | `reports/` | PDF report generation |
 | `database/` | Storage for reviews, findings and reviewer actions |
 | `risk_reporting/` | The explainable 0-100 risk score |
-| `validation_agent/` | The five accounting identity checks |
+| `validation_agent/` | Accounting identity and data-quality checks |
 | `finsight/` | The anomaly detection model |
 | `training/` | Fine-tuning our own review-comment model, and its measured results |
-| `utils/` | Logging, configuration, formatting |
 | `data/` | Sample datasets |
 | `tests/` | Automated tests |
 | `docs/` | Design and deployment documentation |
 
-Each folder has a `README.md` naming its owner and the files expected in it. See **[STRUCTURE.md](STRUCTURE.md)** for where to put your files and how to upload them.
+Each folder has a `README.md` describing its files and the role that built them. **[STRUCTURE.md](STRUCTURE.md)** maps every folder to its role and tests.
 
 ---
 
@@ -85,7 +84,8 @@ Each folder has a `README.md` naming its owner and the files expected in it. See
 | **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** | AWS setup, deployment, rollback, demo-day runbook |
 | **[docs/MODEL_PERFORMANCE.md](docs/MODEL_PERFORMANCE.md)** | Precision, recall, F1 and the honest weak numbers, with how to reproduce each |
 | **[docs/ROADMAP.md](docs/ROADMAP.md)** | What the build cost, what we left out and why, and what we would do next |
-| **[STRUCTURE.md](STRUCTURE.md)** | Where each file belongs, and how to upload without using git |
+| **[docs/HOW_EACH_AGENT_WORKS.md](docs/HOW_EACH_AGENT_WORKS.md)** | One section per agent, with diagrams |
+| **[STRUCTURE.md](STRUCTURE.md)** | Every folder, the role that built it, and where its tests are |
 
 ---
 
@@ -101,7 +101,7 @@ pytest -v
 uvicorn api.main:app --reload     # then open http://localhost:8000
 ```
 
-**No AI API key is required.** Without one the application falls back to an offline reviewer and remains fully functional — which also means no data leaves the machine.
+**No AI API key is used.** No hosted AI service is called: the review is written by our own offline reviewer, so no statement data leaves the service.
 
 ---
 

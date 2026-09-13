@@ -1,20 +1,10 @@
 # `docs/`
 
-**Owner:** Orchestration (Member 1), but everyone contributes
-
-Design documents and the material the panel will read.
-
-## Files that belong here
-
-| File | What it does |
+| Document | What it covers |
 |:--|:--|
-| `HLD.md` | High level design — architecture, data contracts, design decisions, deployment. |
-| `DEPLOYMENT.md` | AWS setup, deploy commands, rollback, and the demo-day runbook. |
-
-## Contract
-
-Keep these current. A stale design document is worse than none.
-
----
-
-*Delete this README once the folder has real files in it.*
+| `HLD.md` | High level design: architecture, data contracts, design decisions, deployment |
+| `HOW_EACH_AGENT_WORKS.md` | One section per agent, with diagrams |
+| `MODEL_PERFORMANCE.md` | Every metric, and how it was measured |
+| `ROADMAP.md` | Effort, known limitations, next steps and running cost |
+| `DEPLOYMENT.md` | AWS setup, CI/CD, rollback and the demo-day runbook |
+| `MANUAL_AGENT_CHECK.md` | Checking each agent against known answers |

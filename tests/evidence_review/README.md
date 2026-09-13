@@ -2,6 +2,8 @@
 
 **Owner:** Evidence & Review
 
-Upload your `test_*.py` files here, and your `conftest.py` if you have one. It applies to the tests in this folder only.
+Tests for the evidence packet and the review narrative.
 
-Upload into this folder only, never into `tests/` directly.
+```bash
+python -m pytest tests/evidence_review
+```

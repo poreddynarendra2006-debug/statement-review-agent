@@ -1,23 +1,17 @@
 # `tests/`
 
-**Owner of the files directly in this folder:** Orchestration & API
+Each role's tests are in their own folder. Tests directly in this folder belong to Orchestration & API and cover the orchestrator, API, sign-in, deployment configuration and the checks between components.
 
-Each role has its own folder in here. **Never upload test files straight into `tests/`.** A file with the same name replaces the existing one - `conftest.py` in this folder is shared by every test in the project, and replacing it breaks them all.
+| Folder | Role |
+|:--|:--|
+| `ingestion_tests/` | Data Ingestion |
+| `validation_tests/` | Validation |
+| `trend/` | Trend |
+| `anomaly/` | Anomaly |
+| `evidence_review/` | Evidence & Review |
+| `risk_tests/` | Risk & Reporting |
 
-## Your folder
-
-| Role | Folder | Files from your project's `tests/` folder |
-|:--|:--|:--|
-| Data Ingestion | `ingestion_tests/` | `__init__.py` and your 7 `test_*.py` files |
-| Validation | `validation_tests/` | `__init__.py` and your 6 `test_*.py` files |
-| Trend | `trend/` | `conftest.py` and your 6 `test_*.py` files |
-| Anomaly | `anomaly/` | `__init__.py` and your 10 `test_*.py` files |
-| Evidence & Review | `evidence_review/` | your `test_*.py` files, and `conftest.py` if you have one |
-| Risk & Reporting | `risk_tests/` | `__init__.py` and your 4 `test_*.py` files |
-
-Your own `conftest.py` belongs in **your** folder. It applies to your tests only, alongside the shared one here.
-
-## Running everything
+`conftest.py` here is shared by the whole suite. CI runs everything on every push.
 
 ```bash
 python -m pytest

@@ -2,23 +2,12 @@
 
 **Owner:** Evidence & Review
 
-Upload your Review Agent package **into this folder**:
+Writes the review narrative from the evidence packet. It never calculates a figure: every number comes from the agents, and `agents/groundedness.py` checks each one afterwards.
 
-- `__init__.py`
-- `agent.py`
-- `models.py`
-- `prompt.py`
+| File | What it does |
+|:--|:--|
+| `agent.py` | `generate_review(packet)` returns the summary and how it was written |
+| `prompt.py` | Prepares a bounded, screened context from the evidence packet |
+| `models.py` | The review output structure |
 
-Your own `README.md` can replace this file.
-
-The app finds it through `agents/review_agent.py`, which calls
-`generate_review(packet)` and reads `summary` and `generation_mode` from what
-comes back.
-
-## Please don't
-
-- Upload the `FinSight_Evidence_Review_Submission` wrapper folder - the files
-  must sit directly in here, or the imports will not find them
-- Upload `__pycache__/`
-- Change anything outside this folder and `evidence_agent/`; your tests belong
-  in `tests/evidence_review/`, where they already are
+No hosted AI service is called. The pipeline reaches it through `agents/review_agent.py`.

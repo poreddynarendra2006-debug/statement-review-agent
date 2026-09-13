@@ -1,14 +1,16 @@
 # `analysis/`
 
-**Owners:** Trend (its files below), Orchestration & API (`anomaly_detection.py`, `recurring_issues.py`, `peer_comparison.py`)
+Trend analysis, and the agents that work across other agents' findings.
 
-| File | Owner |
-|:--|:--|
-| `__init__.py`, `trend.py`, `yoy_analysis.py`, `ratio_analysis.py`, `forecasting.py`, `deviation_analysis.py`, `data_mapping.py`, `trend_agent.py`, `visualization.py` | Trend - the app calls `run_trend_analysis` from `trend.py` |
-| `anomaly_detection.py` | Orchestration & API - connects the Anomaly agent in `finsight/` to the app |
-| `recurring_issues.py` | Orchestration & API - finds the same problem for the same company in 3 or more years, from the other agents' findings |
-| `peer_comparison.py` | Orchestration & API - reports company-years sitting far outside their industry on margins, returns, liquidity and leverage |
+| File | What it does | Role |
+|:--|:--|:--|
+| `trend.py` | Entry point, `run_trend_analysis` | Trend |
+| `yoy_analysis.py`, `ratio_analysis.py` | Year-on-year change and financial ratios | Trend |
+| `forecasting.py`, `deviation_analysis.py` | Backtested forecasts and materiality-graded deviations | Trend |
+| `data_mapping.py`, `trend_agent.py`, `visualization.py` | Column mapping, the agent itself, charts | Trend |
+| `anomaly_detection.py` | Connects the Anomaly agent in `finsight/` to the pipeline | Orchestration & API |
+| `forensic_flags.py` | Forensic red-flag rules used alongside the anomaly model | Anomaly |
+| `recurring_issues.py` | The same finding for the same company in 3 or more years | Orchestration & API |
+| `peer_comparison.py` | Company-years far outside their industry on margins, returns, liquidity and leverage | Orchestration & API |
 
-Trend's settings live in `config/`. Trend's tests live in `tests/trend/`.
-
-Only change your own files in this folder. Anomaly's code goes in `finsight/`, and Validation's in `validation_agent/` - not here.
+Trend's settings are in `config/`.

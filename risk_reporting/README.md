@@ -2,17 +2,12 @@
 
 **Owner:** Risk & Reporting
 
-The explainable 0-100 risk score. The app calls `calculate_risk` from `risk_engine.py`.
+The explainable 0-100 risk score, broken down by the findings that drove it.
 
-## Upload exactly these
+| File | What it does |
+|:--|:--|
+| `risk_engine.py` | `calculate_risk` combines failed checks, anomalies and material deviations into one score |
+| `sample_data/risk_rules.py` | Points per severity, and the score bands for each risk level |
+| `sample_data/agent_outputs.json` | Sample agent output for demonstrating the engine |
 
-What is inside your `risk_reporting/` folder - not the folder itself:
-
-- `__init__.py`, `risk_engine.py`
-- the `sample_data/` folder: `__init__.py`, `agent_outputs.json`, `risk_rules.py`
-
-Your `database/` and `reports/` files go in those folders. Tests go in `tests/risk_tests/`.
-
-## Never upload
-
-the extra `risk_engine.py` from your top-level folder, `requirements.txt`, any `.db` file, `__pycache__/`
+Severity outweighs volume, and statistical findings are capped so they can raise the score but not dominate it.

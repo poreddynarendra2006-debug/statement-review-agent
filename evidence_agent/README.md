@@ -2,20 +2,11 @@
 
 **Owner:** Evidence & Review
 
-Upload your Evidence Agent package **into this folder**:
+Builds the evidence packet: the verified findings from every agent, grouped by type, which the Review Agent writes from.
 
-- `__init__.py`
-- `agent.py`
-- `models.py`
+| File | What it does |
+|:--|:--|
+| `agent.py` | `compile_all_findings(result)` assembles the packet |
+| `models.py` | The evidence packet and finding structures |
 
-The app finds it through `agents/evidence_agent.py`, which calls
-`compile_all_findings(result)` and reads the packet's `validation_findings`,
-`trend_findings`, `anomaly_findings` and `recurring_issues`.
-
-## Please don't
-
-- Upload the `FinSight_Evidence_Review_Submission` wrapper folder - the files
-  must sit directly in here, or the imports will not find them
-- Upload `__pycache__/`
-- Change anything outside this folder and `review_agent/`; your tests belong in
-  `tests/evidence_review/`, where they already are
+The pipeline reaches it through `agents/evidence_agent.py`.

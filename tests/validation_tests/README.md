@@ -2,8 +2,8 @@
 
 **Owner:** Validation
 
-Upload the files from your `tests/` folder:
+Tests for the accounting identities and data-quality checks.
 
-`__init__.py`, `test_data_quality.py`, `test_domain_sanity.py`, `test_duplicates.py`, `test_financial_formulas.py`, `test_schema.py`, `test_validation.py`
-
-Not the `test_validation.py` that sits outside your `tests/` folder. Upload into this folder only, never into `tests/` directly.
+```bash
+python -m pytest tests/validation_tests
+```

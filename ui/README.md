@@ -2,15 +2,16 @@
 
 **Owner:** Frontend
 
-The reviewer's screens. The app serves this folder from `/` on the same address as the API.
+The reviewer's screens, served by the API from the same address.
 
-## Upload
+| Page | Purpose |
+|:--|:--|
+| `index.html`, `signup.html` | Sign in and create an account |
+| `dashboard.html` | Overview of the current review and the PDF download |
+| `upload.html` | Upload a statement and see review history |
+| `findings.html` | Every finding, with Acknowledge, Flag for follow-up and Dismiss |
+| `trends.html` | Ratio charts and material deviations |
+| `risk.html` | The risk score and what drove it |
+| `chatbot.html` | The AI summary of the review |
 
-- `index.html` - the first page
-- your other `.html` pages, and your CSS, JavaScript and image files or folders
-
-Call the API with relative paths such as `fetch("/review/upload")`, never `http://localhost:8000`. Uploads accept `.csv` and `.xlsx` only. Exact request and response fields are at `/docs` when the app runs.
-
-## Never upload
-
-`node_modules/`, build output folders, `.env`, `README.md`
+Scripts are in `js/` and styles in `css/`. Pages call the API with relative paths, so they work wherever the service is deployed.

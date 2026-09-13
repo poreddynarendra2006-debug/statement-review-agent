@@ -155,13 +155,13 @@ These six objects are the interfaces between components. They are frozen at the 
 | Data | pandas, numpy | Tabular manipulation |
 | Parsing | openpyxl | Excel ingestion (PDF was ruled out of scope on 12 Sep) |
 | ML | scikit-learn (IsolationForest) | Unsupervised peer-outlier detection |
-| GenAI | Gemini, OpenAI, offline heuristic | Multi-provider with a no-key fallback |
+| Review model | flan-t5-base fine-tuned by the team (Transformers, PyTorch); deterministic writer in the running service | Our own model; no hosted AI service and no API key |
 | API | FastAPI, uvicorn | Typed, documented REST surface |
 | UI | HTML, CSS, JavaScript served by FastAPI | The reviewer's screens come from the same service as the API |
 | Reporting | ReportLab | Programmatic PDF generation |
 | Storage | SQLite | Zero-configuration persistence |
 | Packaging | Docker | Reproducible runtime |
-| CI | GitHub Actions | Tests, benchmark and image build on every push |
+| CI/CD | GitHub Actions | Tests and image build on every push; manual deploy to AWS through a short-lived OIDC role |
 | Testing | pytest | Unit, integration and benchmark suites |
 
 ---
@@ -199,11 +199,11 @@ These six objects are the interfaces between components. They are frozen at the 
 
 **Alternative:** supervised classification. Rejected — requires labelled anomalies that do not exist for this dataset.
 
-### D5 — Multi-provider AI with an offline fallback
+### D5 — Our own model, no hosted AI
 
-**Decision:** Gemini, OpenAI, or a deterministic heuristic reviewer selected by configuration.
+**Decision:** no hosted AI service is called. The review narrative is written by a deterministic writer, and a `flan-t5-base` model fine-tuned on our own finding logic is trained and measured (`training/results/`), ready to be served behind a flag.
 
-**Alternative:** a single hard-wired provider. Rejected — creates a single point of failure during evaluation and vendor lock-in afterwards.
+**Alternative:** a hosted model such as Gemini or OpenAI. Rejected — financial statements are confidential and would leave the system, every request would carry a cost and an API key to protect, and the output would not be reproducible. Measuring our own model found 12.3% of its numbers unsupported, which is why every figure in a written review is checked against the evidence at runtime.
 
 ### D6 — Configurable materiality
 

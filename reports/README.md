@@ -2,14 +2,10 @@
 
 **Owner:** Risk & Reporting
 
-The downloadable PDF review report. Takes a saved review, returns PDF bytes.
+The downloadable PDF review report.
 
-## Upload exactly these files
+| File | What it does |
+|:--|:--|
+| `report_generator.py` | Builds the PDF from a saved review: summary, risk breakdown, failed checks, deviations and anomalies, recurring issues, peer comparison, coverage |
 
-`__init__.py`, `report_generator.py`
-
-## Never upload
-
-sample PDFs, `__pycache__/`
-
-Tests go in `tests/risk_tests/`.
+Served by `GET /reviews/{id}/report.pdf`.
