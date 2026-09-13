@@ -38,6 +38,7 @@ def init_db() -> None:
             findings_count INTEGER NOT NULL,
             failed_checks_count INTEGER NOT NULL,
             filename TEXT,
+            owner_id INTEGER,
             result_json TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS reviewer_actions (
@@ -73,6 +74,10 @@ def _add_missing_columns(conn: sqlite3.Connection) -> None:
     existing = {row["name"] for row in conn.execute("PRAGMA table_info(reviews)")}
     if "filename" not in existing:
         conn.execute("ALTER TABLE reviews ADD COLUMN filename TEXT")
+    # The account that ran the review. Empty for the demo reviews, which every
+    # reviewer sees; set for uploads, which only their owner sees.
+    if "owner_id" not in existing:
+        conn.execute("ALTER TABLE reviews ADD COLUMN owner_id INTEGER")
 
 
 def _now() -> str:
@@ -91,13 +96,13 @@ def save_review(result: dict) -> int:
             """INSERT INTO reviews
             (created_at, company, period, record_count, risk_score, risk_level,
              review_mode, elapsed_seconds, findings_count, failed_checks_count,
-             filename, result_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+             filename, owner_id, result_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (created_at, result.get("company", ""), result.get("period"),
              result.get("record_count"), risk.get("score", result.get("risk_score")),
              risk.get("risk_level"), result.get("review_mode"), result.get("elapsed_seconds"),
              len(result.get("findings") or []), len(result.get("failed_validations") or []),
-             result.get("filename") or "", payload),
+             result.get("filename") or "", result.get("owner_id"), payload),
         )
         review_id = int(cur.lastrowid)
         for stage, seconds in timings.items():
@@ -119,18 +124,33 @@ def get_review(review_id: int) -> dict[str, Any] | None:
     data = json.loads(row["result_json"])
     data["id"] = row["id"]
     data["created_at"] = row["created_at"]
+    data["owner_id"] = row["owner_id"]
     return data
 
 
-def list_reviews(limit: int = 50) -> list[dict[str, Any]]:
+def list_reviews(limit: int = 50, owner_id: int | None = None) -> list[dict[str, Any]]:
+    """Newest first. Given an owner, only their reviews and the shared demo ones.
+
+    Filtered in SQL rather than afterwards, so a reviewer asking for 20 gets
+    20 of their own, not 20 of everyone's with most of them removed.
+    """
     init_db()
+    columns = """id, created_at, company, period, record_count, risk_score,
+                 risk_level, review_mode, elapsed_seconds, findings_count,
+                 failed_checks_count, filename"""
     with _connect() as conn:
-        rows = conn.execute(
-            """SELECT id, created_at, company, period, record_count, risk_score,
-                      risk_level, review_mode, elapsed_seconds, findings_count,
-                      failed_checks_count, filename
-               FROM reviews ORDER BY id DESC LIMIT ?""", (max(0, int(limit)),)
-        ).fetchall()
+        if owner_id is None:
+            rows = conn.execute(
+                f"SELECT {columns} FROM reviews ORDER BY id DESC LIMIT ?",
+                (max(0, int(limit)),),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                f"""SELECT {columns} FROM reviews
+                    WHERE owner_id = ? OR owner_id IS NULL
+                    ORDER BY id DESC LIMIT ?""",
+                (int(owner_id), max(0, int(limit))),
+            ).fetchall()
     return [dict(row) for row in rows]
 
 
