@@ -157,7 +157,8 @@ function renderDashboardView(container, review) {
   aiTitle.appendChild(brainIcon);
   aiTitle.appendChild(document.createTextNode(' Executive Summary & AI Synthesis'));
   
-  const modeBadge = createElement('span', 'badge badge-low', (review.ai_summary && review.ai_summary.review_mode) ? review.ai_summary.review_mode : 'AI Review');
+  const summaryObj = (review.ai_summary && typeof review.ai_summary === 'object') ? review.ai_summary : {};
+  const modeBadge = createElement('span', 'badge badge-low', summaryObj.review_mode || review.review_mode || 'AI Review');
   aiHeader.appendChild(aiTitle);
   aiHeader.appendChild(modeBadge);
   aiCard.appendChild(aiHeader);
@@ -168,7 +169,12 @@ function renderDashboardView(container, review) {
   aiBody.style.gap = '12px';
   aiBody.style.fontSize = '0.9rem';
 
-  const summaryText = typeof review.summary === 'string' ? review.summary : (review.ai_summary?.summary || 'Statement processed and validated by AuditLens agent.');
+  // ai_summary arrives as the summary text itself; reading .summary inside it
+  // found nothing, so the dashboard always showed this placeholder instead.
+  const summaryText =
+    (typeof review.ai_summary === 'string' && review.ai_summary.trim()) ? review.ai_summary :
+    (typeof review.summary === 'string' && review.summary.trim()) ? review.summary :
+    (summaryObj.summary || 'No summary was generated for this review.');
   const paragraphs = summaryText.split('\n\n').filter(p => p.trim());
 
   paragraphs.forEach(p => {
