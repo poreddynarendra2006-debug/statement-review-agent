@@ -33,9 +33,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 function renderSummaryPage(container, review) {
   container.textContent = '';
 
-  const aiSummaryObj = review.ai_summary || {};
+  // The API sends ai_summary as the summary text itself. This used to read it
+  // as an object and look for .summary inside, which was never there - so the
+  // page always showed the placeholder instead of the review's own summary.
+  const aiSummaryObj = (review.ai_summary && typeof review.ai_summary === 'object') ? review.ai_summary : {};
   const mode = aiSummaryObj.review_mode || (review.companies && review.companies.length > 1 ? 'Multi-Company' : 'Single-Company');
-  const summaryText = typeof review.summary === 'string' ? review.summary : (aiSummaryObj.summary || 'Statement reviewed and verified by AuditLens.');
+  const summaryText =
+    (typeof review.ai_summary === 'string' && review.ai_summary.trim()) ? review.ai_summary :
+    (typeof review.summary === 'string' && review.summary.trim()) ? review.summary :
+    (aiSummaryObj.summary || 'No summary was generated for this review.');
   const securityFlags = aiSummaryObj.security_flags || review.security_flags || [];
 
   // --- Card 1: Executive AI Synthesis ---
