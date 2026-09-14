@@ -1,6 +1,6 @@
 # Model performance and evaluation
 
-AuditLens · Team 33 · measured 12 September 2026
+AuditLens · Team 33 · measured 12 September 2026, anomaly figures rechecked 14 September 2026
 
 Every figure below comes from a run you can repeat: `python -m pytest -q`,
 `python -m scripts.check_agents`, and `python -m finsight --benchmark`.
@@ -15,7 +15,7 @@ shows its good results is not a benchmark.
 | Component | What it is | Headline result |
 |:--|:--|:--|
 | **Validation** | 9 deterministic rules | **Precision 1.00, recall 1.00, F1 1.00** against a planted answer key |
-| **Anomaly detection** | Isolation Forest + robust z-scores | **F1 0.42** at its operating point (0.34 under a harder test), against 0.28 for the statistical baseline |
+| **Anomaly detection** | Isolation Forest + robust z-scores | **F1 0.42** at its operating point, against 0.20 for the statistical baseline (0.34 against 0.28 under a harder test) |
 | **Recurring issues** | Cross-year aggregation | **3 of 3** planted repeats found, nothing extra |
 | **Peer comparison** | Quartile outlier detection | Flags **7.3%** of company-years; the planted outlier found |
 | **Forecasting** | Linear regression, backtested | Median R² **0.19** on synthetic data — honestly weak, see §5 |
@@ -99,9 +99,10 @@ when the planted rate matches the rate it is built for:
 | **5% - the rate the detector is calibrated for** | **0.3125** | **0.6250** | **0.4167** | **0.9146** |
 
 Precision is identical in both, because the model flags the same rows either
-way; only the number of true anomalies changed. So the fair statement is: **F1
-0.42 at its operating point, and 0.34 when asked to find more anomalies than its
-alert budget permits.** Both are reported here because the second is the more
+way; only the number of true anomalies changed. The z-score baseline scores
+0.20 at 5% and 0.28 at 8%. So the fair statement is: **F1 0.42 at its operating
+point against a 0.20 baseline, and 0.34 against 0.28 when asked to find more
+anomalies than its alert budget permits.** Both are reported here because the second is the more
 demanding test and hiding it would be dishonest.
 
 Reproduce with `run_anomaly_benchmark(anomaly_fraction=0.05)`.
@@ -121,24 +122,35 @@ operating cash flow, a collapsed margin, a leverage spike, equity erosion. Each
 is a documented indicator: the sales and gross margin indices of the Beneish
 M-score, and the accrual divergence behind Dechow's F-score.
 
-| Detector | Flagged | Precision | Recall | F1 |
-|:--|:--:|:--:|:--:|:--:|
-| Isolation Forest alone | 19 | 0.158 | 0.375 | 0.222 |
-| **Forensic rules alone** | 7 | **0.714** | 0.625 | **0.667** |
-| Both, as the agent runs | 22 | 0.227 | 0.625 | 0.333 |
+**Two tests, not one.** The benchmark above trains the model on clean data and
+then scores a separate file. The agent itself works differently: it trains on
+each upload and runs the model and the rules together. The figures below measure
+the agent that way, averaged over 10 runs (seeds 1-10) because a single run holds
+only 8 or 13 planted anomalies, and one extra hit or miss moves F1 by about 0.1.
 
-**Two things have to be said about that 0.667.**
+| Planted rate | Isolation Forest alone | Forensic rules alone | **Both, as the agent runs** |
+|:--|:--:|:--:|:--:|
+| 5% | 0.70 (0.50-0.88) | 0.76 (0.67-0.77) | **0.78 (0.67-0.89)** |
+| 8% | 0.58 (0.48-0.72) | 0.74 (0.70-0.76) | **0.77 (0.67-0.86)** |
 
-First, the rules were written while looking at the list of anomaly types this
-benchmark plants, and they target those same patterns. The benchmark is
-therefore **not an independent test of them**, and the figure is illustrative
-rather than a benchmark result.
+Mean F1, with the lowest and highest run in brackets. Combining the two
+detectors raises F1 above either one alone at both rates.
 
-Second, combining the two detectors does **not** raise the combined F1 - the
-union inherits the model's false positives, and 0.333 is the honest number for
-how the agent actually runs. Showing only the best findings, certain ones first,
-would reach 0.625, at the cost of hiding some model findings from the reviewer.
-We chose to show everything.
+**This replaces an earlier table**, which gave the combined figure as 0.333. It
+could not be reproduced on the final code, so it has been withdrawn rather than
+left beside numbers that contradict it.
+
+**One thing has to be said about the rule and combined figures.** The rules
+were written while looking at the list of anomaly types this benchmark plants,
+and they target those same patterns. The benchmark is therefore **not an
+independent test of them**, and those two columns are illustrative rather than
+benchmark results. The independent figure for how the agent runs is the model
+alone: **about 0.70 at 5%**.
+
+Reproduce: generate the reference dataset with `generate_reference_dataset(seed)`,
+plant anomalies with `inject_planted_anomalies(records, anomaly_fraction, seed)`
+for seeds 1-10, run `analysis.anomaly_detection.run_all_anomaly_detection` on
+each file, and count a company-year as flagged when any finding names it.
 
 **What is independent** is the false-positive rate:
 
